@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   LineChart,
   Plus,
@@ -14,124 +14,144 @@ import {
   Download,
   Upload,
   Code,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 interface Indicator {
-  id: number
-  name: string
-  platform: string
-  version: string
-  downloads: number
-  status: string
-  price: string
-  updated_at: string
+  id: number;
+  name: string;
+  platform: string;
+  version: string;
+  downloads: number;
+  status: string;
+  price: string;
+  updated_at: string;
 }
 
 export default function AdminIndicatorPage() {
-  const [indicators, setIndicators] = useState<<Indicator[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedIndicator, setSelectedIndicator] = useState<<Indicator | null>(null)
-  const [formData, setFormData] = useState({ 
-    name: '', platform: 'MT4', version: '', downloads: 0, 
-    status: 'active', price: 'Free', updated_at: '' 
-  })
-  const [loading, setLoading] = useState(true)
+  const [indicators, setIndicators] = useState<Indicator[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(
+    null,
+  );
+  const [formData, setFormData] = useState({
+    name: "",
+    platform: "MT4",
+    version: "",
+    downloads: 0,
+    status: "active",
+    price: "Free",
+    updated_at: "",
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchIndicators()
-  }, [])
+    fetchIndicators();
+  }, []);
 
   const fetchIndicators = async () => {
     try {
-      const res = await fetch('/api/indicators')
-      const data = await res.json()
-      setIndicators(data.map((i: any) => ({
-        ...i,
-        updatedAt: i.updated_at || i.updatedAt
-      })))
+      const res = await fetch("/api/indicators");
+      const data = await res.json();
+      setIndicators(
+        data.map((i: any) => ({
+          ...i,
+          updatedAt: i.updated_at || i.updatedAt,
+        })),
+      );
     } catch (error) {
-      console.error('Failed to fetch indicators:', error)
+      console.error("Failed to fetch indicators:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleAdd = async () => {
     try {
-      const res = await fetch('/api/indicators', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
+      const res = await fetch("/api/indicators", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (res.ok) {
-        setIsAddDialogOpen(false)
-        setFormData({ name: '', platform: 'MT4', version: '', downloads: 0, status: 'active', price: 'Free', updated_at: '' })
-        fetchIndicators()
+        setIsAddDialogOpen(false);
+        setFormData({
+          name: "",
+          platform: "MT4",
+          version: "",
+          downloads: 0,
+          status: "active",
+          price: "Free",
+          updated_at: "",
+        });
+        fetchIndicators();
       }
     } catch (error) {
-      console.error('Failed to add indicator:', error)
+      console.error("Failed to add indicator:", error);
     }
-  }
+  };
 
   const handleEdit = async () => {
-    if (!selectedIndicator) return
+    if (!selectedIndicator) return;
     try {
       const res = await fetch(`/api/indicators/${selectedIndicator.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (res.ok) {
-        setIsEditDialogOpen(false)
-        setSelectedIndicator(null)
-        fetchIndicators()
+        setIsEditDialogOpen(false);
+        setSelectedIndicator(null);
+        fetchIndicators();
       }
     } catch (error) {
-      console.error('Failed to edit indicator:', error)
+      console.error("Failed to edit indicator:", error);
     }
-  }
+  };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure?')) return
+    if (!confirm("Are you sure?")) return;
     try {
-      const res = await fetch(`/api/indicators/${id}`, { method: 'DELETE' })
-      if (res.ok) fetchIndicators()
+      const res = await fetch(`/api/indicators/${id}`, { method: "DELETE" });
+      if (res.ok) fetchIndicators();
     } catch (error) {
-      console.error('Failed to delete indicator:', error)
+      console.error("Failed to delete indicator:", error);
     }
-  }
+  };
 
   const filteredIndicators = indicators.filter((indicator) =>
-    indicator.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    indicator.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>
+  if (loading)
+    return (
+      <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    );
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
@@ -139,7 +159,9 @@ export default function AdminIndicatorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Indicators</h1>
-          <p className="text-muted-foreground">Manage trading indicators for MT4/MT5</p>
+          <p className="text-muted-foreground">
+            Manage trading indicators for MT4/MT5
+          </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -157,7 +179,9 @@ export default function AdminIndicatorPage() {
                 <Label>Indicator Name</Label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Enter indicator name"
                   className="bg-[#1E2433] border-[#2A3142]"
                 />
@@ -165,7 +189,12 @@ export default function AdminIndicatorPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Platform</Label>
-                  <Select value={formData.platform} onValueChange={(v) => setFormData({...formData, platform: v})}>
+                  <Select
+                    value={formData.platform}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, platform: v })
+                    }
+                  >
                     <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
@@ -178,7 +207,12 @@ export default function AdminIndicatorPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Price Type</Label>
-                  <Select value={formData.price} onValueChange={(v) => setFormData({...formData, price: v})}>
+                  <Select
+                    value={formData.price}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, price: v })
+                    }
+                  >
                     <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
@@ -193,7 +227,9 @@ export default function AdminIndicatorPage() {
                 <Label>Version</Label>
                 <Input
                   value={formData.version}
-                  onChange={(e) => setFormData({...formData, version: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, version: e.target.value })
+                  }
                   placeholder="e.g., 1.0.0"
                   className="bg-[#1E2433] border-[#2A3142]"
                 />
@@ -213,7 +249,9 @@ export default function AdminIndicatorPage() {
                   <p className="text-sm text-muted-foreground">
                     Click to upload indicator files
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">.ex4, .ex5, .mq4, .mq5</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    .ex4, .ex5, .mq4, .mq5
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2 pt-4">
@@ -224,7 +262,10 @@ export default function AdminIndicatorPage() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]" onClick={handleAdd}>
+                <Button
+                  className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                  onClick={handleAdd}
+                >
                   Save Indicator
                 </Button>
               </div>
@@ -270,15 +311,18 @@ export default function AdminIndicatorPage() {
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#1E2433] border-[#2A3142]">
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-[#1E2433] border-[#2A3142]"
+                >
                   <DropdownMenuItem className="cursor-pointer">
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer"
                     onClick={() => {
-                      setSelectedIndicator(indicator)
+                      setSelectedIndicator(indicator);
                       setFormData({
                         name: indicator.name,
                         platform: indicator.platform,
@@ -286,9 +330,9 @@ export default function AdminIndicatorPage() {
                         downloads: indicator.downloads,
                         status: indicator.status,
                         price: indicator.price,
-                        updated_at: indicator.updated_at || ''
-                      })
-                      setIsEditDialogOpen(true)
+                        updated_at: indicator.updated_at || "",
+                      });
+                      setIsEditDialogOpen(true);
                     }}
                   >
                     <Edit className="w-4 h-4 mr-2" />
@@ -298,7 +342,7 @@ export default function AdminIndicatorPage() {
                     <Code className="w-4 h-4 mr-2" />
                     View Source
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer text-[#EF4444]"
                     onClick={() => handleDelete(indicator.id)}
                   >
@@ -309,8 +353,12 @@ export default function AdminIndicatorPage() {
               </DropdownMenu>
             </div>
 
-            <h3 className="font-semibold text-foreground mb-1">{indicator.name}</h3>
-            <p className="text-sm text-muted-foreground mb-4">Version {indicator.version}</p>
+            <h3 className="font-semibold text-foreground mb-1">
+              {indicator.name}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Version {indicator.version}
+            </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="px-2 py-1 rounded-md bg-[#1E2433] text-xs text-foreground">
@@ -339,7 +387,9 @@ export default function AdminIndicatorPage() {
             <div className="flex items-center justify-between pt-4 border-t border-[#2A3142]">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Download className="w-4 h-4" />
-                <span className="text-sm">{indicator.downloads.toLocaleString()}</span>
+                <span className="text-sm">
+                  {indicator.downloads.toLocaleString()}
+                </span>
               </div>
               <span className="text-xs text-muted-foreground">
                 Updated {indicator.updated_at || indicator.updatedAt}
@@ -360,14 +410,21 @@ export default function AdminIndicatorPage() {
               <Label>Indicator Name</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="bg-[#1E2433] border-[#2A3142]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Platform</Label>
-                <Select value={formData.platform} onValueChange={(v) => setFormData({...formData, platform: v})}>
+                <Select
+                  value={formData.platform}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, platform: v })
+                  }
+                >
                   <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                     <SelectValue />
                   </SelectTrigger>
@@ -380,7 +437,10 @@ export default function AdminIndicatorPage() {
               </div>
               <div className="space-y-2">
                 <Label>Price Type</Label>
-                <Select value={formData.price} onValueChange={(v) => setFormData({...formData, price: v})}>
+                <Select
+                  value={formData.price}
+                  onValueChange={(v) => setFormData({ ...formData, price: v })}
+                >
                   <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                     <SelectValue />
                   </SelectTrigger>
@@ -395,13 +455,18 @@ export default function AdminIndicatorPage() {
               <Label>Version</Label>
               <Input
                 value={formData.version}
-                onChange={(e) => setFormData({...formData, version: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, version: e.target.value })
+                }
                 className="bg-[#1E2433] border-[#2A3142]"
               />
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
+              <Select
+                value={formData.status}
+                onValueChange={(v) => setFormData({ ...formData, status: v })}
+              >
                 <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                   <SelectValue />
                 </SelectTrigger>
@@ -412,10 +477,17 @@ export default function AdminIndicatorPage() {
               </Select>
             </div>
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1 border-[#2A3142]" onClick={() => setIsEditDialogOpen(false)}>
+              <Button
+                variant="outline"
+                className="flex-1 border-[#2A3142]"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]" onClick={handleEdit}>
+              <Button
+                className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                onClick={handleEdit}
+              >
                 Update
               </Button>
             </div>
@@ -427,12 +499,16 @@ export default function AdminIndicatorPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#0D1117] border border-[#2A3142] rounded-xl p-4">
           <p className="text-sm text-muted-foreground">Total Indicators</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{indicators.length}</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            {indicators.length}
+          </p>
         </div>
         <div className="bg-[#0D1117] border border-[#2A3142] rounded-xl p-4">
           <p className="text-sm text-muted-foreground">Total Downloads</p>
           <p className="text-2xl font-bold text-foreground mt-1">
-            {indicators.reduce((acc, i) => acc + i.downloads, 0).toLocaleString()}
+            {indicators
+              .reduce((acc, i) => acc + i.downloads, 0)
+              .toLocaleString()}
           </p>
         </div>
         <div className="bg-[#0D1117] border border-[#2A3142] rounded-xl p-4">
@@ -449,5 +525,5 @@ export default function AdminIndicatorPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
