@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,7 +13,7 @@ import {
   Bot,
   BarChart3,
   Video,
-  Image,
+  Image as ImageIcon,
   CreditCard,
   FileSpreadsheet,
   LogOut,
@@ -31,7 +32,7 @@ const adminSidebarLinks = [
   { href: "/admin/ea", icon: Bot, label: "EA Trading" },
   { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/admin/tiktok", icon: Video, label: "TikTok Traffic" },
-  { href: "/admin/banner", icon: Image, label: "Banner" },
+  { href: "/admin/banner", icon: ImageIcon, label: "Banner" },
   { href: "/admin/membership", icon: CreditCard, label: "Membership" },
   { href: "/admin/reports", icon: FileSpreadsheet, label: "Reports" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
@@ -40,6 +41,22 @@ const adminSidebarLinks = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // Load custom logo from admin settings
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("admin_settings");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.logo) setLogoUrl(parsed.logo);
+      }
+    } catch {
+      // ignore parse error
+    }
+  }, []);
+
+  const logoSrc = logoUrl || "/logo-fbl.png";
 
   return (
     <>
@@ -48,9 +65,9 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-[#2A3142]">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg overflow-hidden">
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#1E2433] flex items-center justify-center">
               <Image
-                src="/logo-fbl.png"
+                src={logoSrc}
                 alt="FBL Logo"
                 width={40}
                 height={40}
@@ -107,8 +124,15 @@ export function AdminSidebar() {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#EF4444] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#1E2433] flex items-center justify-center">
+              <Image
+                src={logoSrc}
+                alt="FBL Logo"
+                width={32}
+                height={32}
+                className="object-cover"
+                priority
+              />
             </div>
             <span className="text-lg font-bold text-foreground">
               Admin <span className="text-[#EF4444]">Panel</span>
