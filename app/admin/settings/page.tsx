@@ -59,7 +59,7 @@ const DEFAULT_SETTINGS = {
 
 export default function AdminSettingsPage() {
   const router = useRouter();
-  const [admin, setAdmin] = useState<<AdminUser | null>(null);
+  const [admin, setAdmin] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
