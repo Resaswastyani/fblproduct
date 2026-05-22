@@ -26,48 +26,28 @@ export async function PUT(
     const body = await request.json();
     const { title, category, pages, downloads, status, file_url } = body;
 
-    // Build dynamic update query - only update fields that are provided
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
-
-    if (title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
-      values.push(title);
-    }
-    if (category !== undefined) {
-      updates.push(`category = $${paramIndex++}`);
-      values.push(category);
-    }
-    if (pages !== undefined) {
-      updates.push(`pages = $${paramIndex++}`);
-      values.push(pages);
-    }
-    if (downloads !== undefined) {
-      updates.push(`downloads = $${paramIndex++}`);
-      values.push(downloads);
-    }
-    if (status !== undefined) {
-      updates.push(`status = $${paramIndex++}`);
-      values.push(status);
-    }
-    if (file_url !== undefined) {
-      updates.push(`file_url = $${paramIndex++}`);
-      values.push(file_url);
+    // Get current ebook data first
+    const current = await sql`SELECT * FROM ebooks WHERE id = ${id}`;
+    if (current.length === 0) {
+      return NextResponse.json({ error: "Ebook not found" }, { status: 404 });
     }
 
-    if (updates.length === 0) {
-      return NextResponse.json(
-        { error: "No fields to update" },
-        { status: 400 },
-      );
-    }
+    const existing = current[0];
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(id);
-
-    const query = `UPDATE ebooks SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
-    const result = await sql(query, values);
+    // Use tagged template literal with coalesce - pass the new value or existing value
+    const result = await sql`
+      UPDATE ebooks 
+      SET 
+        title = ${title !== undefined ? title : existing.title},
+        category = ${category !== undefined ? category : existing.category},
+        pages = ${pages !== undefined ? pages : existing.pages},
+        downloads = ${downloads !== undefined ? downloads : existing.downloads},
+        status = ${status !== undefined ? status : existing.status},
+        file_url = ${file_url !== undefined ? file_url : existing.file_url},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `;
 
     return NextResponse.json(result[0]);
   } catch (error: any) {
