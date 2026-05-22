@@ -32,21 +32,39 @@ export default function EbookPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
+    // FIX: Coba multiple key untuk backward compatibility
+    let stored = localStorage.getItem("user");
+    if (!stored) stored = localStorage.getItem("tradevault_user");
+
     if (!stored) {
       router.push("/login");
       return;
     }
-    const parsed: User = JSON.parse(stored);
-    setUser(parsed);
-    fetchEbooks(parsed.id);
+
+    try {
+      const parsed: User = JSON.parse(stored);
+      if (!parsed.id) {
+        router.push("/login");
+        return;
+      }
+      setUser(parsed);
+      fetchEbooks(parsed.id);
+    } catch (e) {
+      router.push("/login");
+    }
   }, [router]);
 
   const fetchEbooks = async (userId: number) => {
     try {
+      console.log("Fetching ebooks for user:", userId); // Debug
       const res = await fetch(`/api/users/${userId}/products`);
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("API Error:", err);
+        throw new Error(err.error || "Failed to fetch");
+      }
       const data = await res.json();
+      console.log("API Response:", data); // Debug
       setEbooks(Array.isArray(data.ebooks) ? data.ebooks : []);
     } catch (err) {
       console.error("Failed to load ebooks:", err);
@@ -140,7 +158,9 @@ export default function EbookPage() {
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {ebook.date ||
-                    new Date(ebook.created_at).toLocaleDateString()}
+                    (ebook.created_at
+                      ? new Date(ebook.created_at).toLocaleDateString()
+                      : "N/A")}
                 </span>
               </div>
 

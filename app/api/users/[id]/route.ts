@@ -2,11 +2,23 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+// FIX: Helper untuk ekstrak ID dari URL karena params kadang bermasalah di Vercel
+function getIdFromUrl(request: Request): string | null {
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split("/");
+  const id = pathParts[pathParts.length - 1];
+  // Pastikan ID adalah number
+  if (!id || isNaN(Number(id))) return null;
+  return id;
+}
+
+export async function GET(request: Request) {
   try {
+    const id = getIdFromUrl(request);
+    if (!id) {
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
+
     const users = await sql`
       SELECT 
         u.id, u.name, u.email, u.date, u.status, u.role,
@@ -21,7 +33,7 @@ export async function GET(
         ) as products
       FROM users u
       LEFT JOIN user_products up ON u.id = up.user_id
-      WHERE u.id = ${params.id}
+      WHERE u.id = ${id}
       GROUP BY u.id
     `;
 
@@ -35,15 +47,18 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function PUT(request: Request) {
   try {
-    const body = await request.json();
-    const { name, email, status, role, password, products } = body;
+    const id = getIdFromUrl(request);
+    if (!id) {
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
 
-    const current = await sql`SELECT * FROM users WHERE id = ${params.id}`;
+    const body = await request.json();
+    const { name, email, status, role, password } = body;
+
+    // FIX: Cek user exists dulu
+    const current = await sql`SELECT * FROM users WHERE id = ${id}`;
     if (current.length === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -65,33 +80,25 @@ export async function PUT(
         role = ${updatedRole},
         password = ${updatedPassword},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${params.id}
+      WHERE id = ${id}
       RETURNING id, name, email, date, status, role
     `;
 
-    // FIX: Update products kalau ada di body
-    if (products && Array.isArray(products)) {
-      await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
-      for (const product of products) {
-        await sql`
-          INSERT INTO user_products (user_id, product_type, product_id)
-          VALUES (${params.id}, ${product.type}, ${product.id})
-        `;
-      }
-    }
-
     return NextResponse.json(result[0]);
   } catch (error: any) {
+    console.error("PUT Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(request: Request) {
   try {
-    await sql`DELETE FROM users WHERE id = ${params.id}`;
+    const id = getIdFromUrl(request);
+    if (!id) {
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
+
+    await sql`DELETE FROM users WHERE id = ${id}`;
     return NextResponse.json({ message: "User deleted successfully" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
