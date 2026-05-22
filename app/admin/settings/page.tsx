@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS = {
   timezone: "asia-jakarta",
   primaryColor: "#2962FF",
   accentColor: "#F7C948",
+  logo: null as string | null,
   notifications: {
     newUser: true,
     newPurchase: true,
@@ -58,7 +59,7 @@ const DEFAULT_SETTINGS = {
 
 export default function AdminSettingsPage() {
   const router = useRouter();
-  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [admin, setAdmin] = useState<<AdminUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -75,6 +76,7 @@ export default function AdminSettingsPage() {
     DEFAULT_SETTINGS.primaryColor,
   );
   const [accentColor, setAccentColor] = useState(DEFAULT_SETTINGS.accentColor);
+  const [logo, setLogo] = useState<string | null>(DEFAULT_SETTINGS.logo);
 
   // Notifications state
   const [notifications, setNotifications] = useState(
@@ -119,6 +121,7 @@ export default function AdminSettingsPage() {
         setTimezone(parsed.timezone || DEFAULT_SETTINGS.timezone);
         setPrimaryColor(parsed.primaryColor || DEFAULT_SETTINGS.primaryColor);
         setAccentColor(parsed.accentColor || DEFAULT_SETTINGS.accentColor);
+        setLogo(parsed.logo || DEFAULT_SETTINGS.logo);
         if (parsed.notifications) {
           setNotifications({
             ...DEFAULT_SETTINGS.notifications,
@@ -149,6 +152,7 @@ export default function AdminSettingsPage() {
       timezone,
       primaryColor,
       accentColor,
+      logo,
       notifications,
       security,
     };
@@ -161,6 +165,35 @@ export default function AdminSettingsPage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }, 800);
+  };
+
+  const handleLogoUpload = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          setLogo(data.url);
+        } else {
+          console.error("Upload error:", data.error);
+        }
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
+    };
+    input.click();
   };
 
   const handleNotificationChange = (key: string, value: boolean) => {
@@ -217,6 +250,7 @@ export default function AdminSettingsPage() {
     setTimezone(DEFAULT_SETTINGS.timezone);
     setPrimaryColor(DEFAULT_SETTINGS.primaryColor);
     setAccentColor(DEFAULT_SETTINGS.accentColor);
+    setLogo(DEFAULT_SETTINGS.logo);
     setNotifications(DEFAULT_SETTINGS.notifications);
     setSecurity(DEFAULT_SETTINGS.security);
     localStorage.removeItem("admin_settings");
@@ -390,12 +424,24 @@ export default function AdminSettingsPage() {
                 <div className="space-y-2">
                   <Label>Logo</Label>
                   <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-[#1E2433] flex items-center justify-center">
-                      <span className="text-2xl font-bold text-[#F7C948]">
-                        TV
-                      </span>
+                    <div className="w-20 h-20 rounded-xl bg-[#1E2433] flex items-center justify-center overflow-hidden">
+                      {logo ? (
+                        <img
+                          src={logo}
+                          alt="Logo"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xl font-bold text-[#F7C948]">
+                          TV
+                        </span>
+                      )}
                     </div>
-                    <Button variant="outline" className="border-[#2A3142]">
+                    <Button
+                      variant="outline"
+                      className="border-[#2A3142]"
+                      onClick={handleLogoUpload}
+                    >
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Logo
                     </Button>

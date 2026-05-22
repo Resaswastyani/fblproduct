@@ -48,9 +48,17 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-[#2A3142]">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-[#EF4444] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">FBL</span>
+            <div className="w-10 h-10 rounded-lg overflow-hidden">
+              <Image
+                src="/logo-fbl.png"
+                alt="FBL Logo"
+                width={40}
+                height={40}
+                className="object-cover"
+                priority
+              />
             </div>
+
             <span className="text-lg font-bold text-foreground">
               Admin <span className="text-[#EF4444]">Panel</span>
             </span>
