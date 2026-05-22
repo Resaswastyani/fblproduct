@@ -1,29 +1,63 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "#features", label: "Tools" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
-]
+];
 
 export function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [siteName, setSiteName] = useState("Forex For Better Living");
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Load settings from API + sync to localStorage
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        const general = data.general || data;
+        if (general.logo) setLogoUrl(general.logo);
+        if (general.siteName) setSiteName(general.siteName);
+
+        // Sync to localStorage so other components are consistent
+        try {
+          const existing = localStorage.getItem("admin_settings");
+          const parsed = existing ? JSON.parse(existing) : {};
+          localStorage.setItem(
+            "admin_settings",
+            JSON.stringify({ ...parsed, ...general }),
+          );
+        } catch {}
+      })
+      .catch(() => {
+        // Fallback to localStorage if API fails
+        try {
+          const raw = localStorage.getItem("admin_settings");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.logo) setLogoUrl(parsed.logo);
+            if (parsed.siteName) setSiteName(parsed.siteName);
+          }
+        } catch {}
+      });
+  }, []);
 
   return (
     <>
@@ -38,11 +72,19 @@ export function Navbar() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center">
-                <span className="text-[#0B0F19] font-bold text-lg">TV</span>
+              <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center overflow-hidden p-1">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <span className="text-[#0B0F19] font-bold text-lg">FBL</span>
+                )}
               </div>
               <span className="text-xl font-bold text-foreground hidden sm:block">
-                TradeVault <span className="text-[#F7C948]">Pro</span>
+                {siteName} <span className="text-[#F7C948]">Pro</span>
               </span>
             </Link>
 
@@ -62,7 +104,10 @@ export function Navbar() {
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <Link href="/login">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   Login
                 </Button>
               </Link>
@@ -79,7 +124,11 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 text-foreground"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -119,12 +168,21 @@ export function Navbar() {
                   transition={{ delay: 0.4 }}
                   className="flex flex-col gap-3 mt-6"
                 >
-                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full border-[#2A3142] text-foreground">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full border-[#2A3142] text-foreground"
+                    >
                       Login Member
                     </Button>
                   </Link>
-                  <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link
+                    href="/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     <Button className="w-full gradient-gold text-[#0B0F19] font-semibold">
                       Get Access Now
                     </Button>
@@ -136,5 +194,5 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }

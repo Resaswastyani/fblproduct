@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { ChevronRight, Star, TrendingUp, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ChevronRight, Star, TrendingUp, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Elements */}
       <div className="absolute inset-0 candlestick-bg" />
-      
+
       {/* Gradient Orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2962FF]/20 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#F7C948]/10 rounded-full blur-[120px] animate-pulse" />
-      
+
       {/* Candlestick decorations */}
       <div className="absolute left-10 top-1/3 hidden lg:block opacity-20">
         <CandlestickDecoration />
@@ -34,10 +34,15 @@ export function HeroSection() {
           >
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-[#F7C948] text-[#F7C948]" />
+                <Star
+                  key={i}
+                  className="w-4 h-4 fill-[#F7C948] text-[#F7C948]"
+                />
               ))}
             </div>
-            <span className="text-sm text-muted-foreground">5000+ Trader Bergabung</span>
+            <span className="text-sm text-muted-foreground">
+              5000+ Trader Bergabung
+            </span>
           </motion.div>
 
           {/* Main Heading */}
@@ -116,8 +121,12 @@ export function HeroSection() {
               { value: "98%", label: "Satisfaction" },
             ].map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-[#F7C948]">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-[#F7C948]">
+                  {stat.value}
+                </div>
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </motion.div>
@@ -140,7 +149,7 @@ export function HeroSection() {
         </motion.div>
       </motion.div>
     </section>
-  )
+  );
 }
 
 function CandlestickDecoration() {
@@ -149,17 +158,38 @@ function CandlestickDecoration() {
       {/* Green candle */}
       <rect x="10" y="80" width="20" height="60" fill="#00C853" rx="2" />
       <line x1="20" y1="60" x2="20" y2="80" stroke="#00C853" strokeWidth="2" />
-      <line x1="20" y1="140" x2="20" y2="160" stroke="#00C853" strokeWidth="2" />
-      
+      <line
+        x1="20"
+        y1="140"
+        x2="20"
+        y2="160"
+        stroke="#00C853"
+        strokeWidth="2"
+      />
+
       {/* Red candle */}
       <rect x="40" y="40" width="20" height="80" fill="#EF4444" rx="2" />
       <line x1="50" y1="20" x2="50" y2="40" stroke="#EF4444" strokeWidth="2" />
-      <line x1="50" y1="120" x2="50" y2="150" stroke="#EF4444" strokeWidth="2" />
-      
+      <line
+        x1="50"
+        y1="120"
+        x2="50"
+        y2="150"
+        stroke="#EF4444"
+        strokeWidth="2"
+      />
+
       {/* Green candle */}
       <rect x="70" y="60" width="20" height="50" fill="#00C853" rx="2" />
       <line x1="80" y1="40" x2="80" y2="60" stroke="#00C853" strokeWidth="2" />
-      <line x1="80" y1="110" x2="80" y2="130" stroke="#00C853" strokeWidth="2" />
+      <line
+        x1="80"
+        y1="110"
+        x2="80"
+        y2="130"
+        stroke="#00C853"
+        strokeWidth="2"
+      />
     </svg>
-  )
+  );
 }

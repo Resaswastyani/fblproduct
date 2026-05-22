@@ -1,59 +1,70 @@
-import type { Metadata, Viewport } from 'next'
-import { Inter, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata, Viewport } from "next";
+import { Inter, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import "./globals.css";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-inter",
 });
 
-const geistMono = Geist_Mono({ 
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  variable: "--font-geist-mono"
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
-  title: 'TradeVault Pro - Premium Trading Tools & Resources',
-  description: 'Download premium trading tools including Ebook, EA Trading, Indicators, and Position Size Calculator. Join 5000+ traders today.',
-  keywords: ['trading', 'forex', 'ebook', 'indicator', 'EA trading', 'position size calculator'],
-  generator: 'v0.app',
+  title: "Forex For Better Living",
+  description:
+    "Download premium trading tools including Ebook, EA Trading, Indicators, and Position Size Calculator. Join 5000+ traders today.",
+  keywords: [
+    "trading",
+    "forex",
+    "ebook",
+    "indicator",
+    "EA trading",
+    "position size calculator",
+  ],
+  generator: "v0.app",
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
+        url: "/icon-light-32x32.png",
+        media: "(prefers-color-scheme: light)",
       },
       {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
+        url: "/icon-dark-32x32.png",
+        media: "(prefers-color-scheme: dark)",
       },
       {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: "/icon.svg",
+        type: "image/svg+xml",
       },
     ],
-    apple: '/apple-icon.png',
+    apple: "/apple-icon.png",
   },
-}
+};
 
 export const viewport: Viewport = {
-  themeColor: '#0B0F19',
-  width: 'device-width',
+  themeColor: "#0B0F19",
+  width: "device-width",
   initialScale: 1,
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} bg-[#0B0F19]`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${geistMono.variable} bg-[#0B0F19]`}
+    >
       <body className="font-sans antialiased bg-[#0B0F19] text-foreground">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
-  )
+  );
 }

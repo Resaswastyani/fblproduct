@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { UserPlus, LogIn, Download, TrendingUp } from "lucide-react"
+import { motion } from "framer-motion";
+import { UserPlus, LogIn, Download, TrendingUp } from "lucide-react";
 
 const steps = [
   {
@@ -28,7 +28,7 @@ const steps = [
     title: "Improve Trading",
     description: "Tingkatkan performa trading Anda",
   },
-]
+];
 
 export function HowItWorksSection() {
   return (
@@ -79,13 +79,19 @@ export function HowItWorksSection() {
                       <step.icon className="w-8 h-8 text-[#2962FF]" />
                     </div>
                     <div className="absolute -top-2 -right-2 w-8 h-8 rounded-lg gradient-gold flex items-center justify-center">
-                      <span className="text-[#0B0F19] text-xs font-bold">{step.number}</span>
+                      <span className="text-[#0B0F19] text-xs font-bold">
+                        {step.number}
+                      </span>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-bold text-foreground mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground text-sm">{step.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {step.description}
+                  </p>
                 </div>
 
                 {/* Connector line - mobile/tablet */}
@@ -100,5 +106,5 @@ export function HowItWorksSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,38 +1,42 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Star, Quote } from "lucide-react"
+import { motion } from "framer-motion";
+import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
     name: "Ahmad Faisal",
     role: "Full-time Trader",
-    content: "Risk management saya jauh lebih rapi setelah menggunakan Position Size Calculator. Sangat membantu!",
+    content:
+      "Risk management saya jauh lebih rapi setelah menggunakan Position Size Calculator. Sangat membantu!",
     rating: 5,
     avatar: "AF",
   },
   {
     name: "Budi Santoso",
     role: "Forex Trader",
-    content: "EA membantu trading saya lebih disiplin. Tidak lagi overtrading dan hasilnya konsisten.",
+    content:
+      "EA membantu trading saya lebih disiplin. Tidak lagi overtrading dan hasilnya konsisten.",
     rating: 5,
     avatar: "BS",
   },
   {
     name: "Dewi Lestari",
     role: "Part-time Trader",
-    content: "Ebook trading sangat comprehensive. Psikologi trading yang diajarkan benar-benar aplikatif.",
+    content:
+      "Ebook trading sangat comprehensive. Psikologi trading yang diajarkan benar-benar aplikatif.",
     rating: 5,
     avatar: "DL",
   },
   {
     name: "Rudi Hermawan",
     role: "Scalper",
-    content: "Indicator premium sangat akurat untuk menentukan entry point. Profit saya meningkat 40%.",
+    content:
+      "Indicator premium sangat akurat untuk menentukan entry point. Profit saya meningkat 40%.",
     rating: 5,
     avatar: "RH",
   },
-]
+];
 
 export function TestimonialsSection() {
   return (
@@ -75,7 +79,10 @@ export function TestimonialsSection() {
               {/* Rating */}
               <div className="flex items-center gap-0.5 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#F7C948] text-[#F7C948]" />
+                  <Star
+                    key={i}
+                    className="w-4 h-4 fill-[#F7C948] text-[#F7C948]"
+                  />
                 ))}
               </div>
 
@@ -87,11 +94,17 @@ export function TestimonialsSection() {
               {/* Author */}
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full gradient-gold flex items-center justify-center">
-                  <span className="text-[#0B0F19] font-bold">{testimonial.avatar}</span>
+                  <span className="text-[#0B0F19] font-bold">
+                    {testimonial.avatar}
+                  </span>
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  <div className="font-semibold text-foreground">
+                    {testimonial.name}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {testimonial.role}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -99,5 +112,5 @@ export function TestimonialsSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

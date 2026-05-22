@@ -1,9 +1,15 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { BookOpen, LineChart, Bot, Calculator, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { motion } from "framer-motion";
+import {
+  BookOpen,
+  LineChart,
+  Bot,
+  Calculator,
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const features = [
   {
@@ -34,7 +40,7 @@ const features = [
     color: "#8B5CF6",
     href: "/dashboard/calculator",
   },
-]
+];
 
 export function FeaturesSection() {
   return (
@@ -54,7 +60,8 @@ export function FeaturesSection() {
             Trading Tools Yang Anda Butuhkan
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Akses berbagai tools trading premium untuk meningkatkan performa trading Anda
+            Akses berbagai tools trading premium untuk meningkatkan performa
+            trading Anda
           </p>
         </motion.div>
 
@@ -113,5 +120,5 @@ export function FeaturesSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,8 +1,9 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { MessageCircle, Send, Mail, Shield } from "lucide-react"
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { MessageCircle, Send, Mail, Shield } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -15,15 +16,50 @@ const footerLinks = {
     { href: "/privacy", label: "Privacy Policy" },
     { href: "/terms", label: "Terms of Service" },
   ],
-}
+};
 
 const socialLinks = [
   { icon: MessageCircle, href: "https://tiktok.com", label: "TikTok" },
   { icon: Send, href: "https://telegram.me", label: "Telegram" },
   { icon: Mail, href: "mailto:support@tradevault.pro", label: "Email" },
-]
+];
 
 export function Footer() {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [siteName, setSiteName] = useState("Forex For Better Living");
+
+  // Load settings from API + sync to localStorage
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        const general = data.general || data;
+        if (general.logo) setLogoUrl(general.logo);
+        if (general.siteName) setSiteName(general.siteName);
+
+        try {
+          const existing = localStorage.getItem("admin_settings");
+          const parsed = existing ? JSON.parse(existing) : {};
+          localStorage.setItem(
+            "admin_settings",
+            JSON.stringify({ ...parsed, ...general }),
+          );
+        } catch {}
+      })
+      .catch(() => {
+        try {
+          const raw = localStorage.getItem("admin_settings");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.logo) setLogoUrl(parsed.logo);
+            if (parsed.siteName) setSiteName(parsed.siteName);
+          }
+        } catch {}
+      });
+  }, []);
+
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="border-t border-[#2A3142] bg-[#0D1117]">
       <div className="container mx-auto px-4 py-12 lg:py-16">
@@ -36,15 +72,24 @@ export function Footer() {
             className="lg:col-span-2"
           >
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center">
-                <span className="text-[#0B0F19] font-bold text-lg">TV</span>
+              <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center overflow-hidden p-1">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <span className="text-[#0B0F19] font-bold text-lg">FBL</span>
+                )}
               </div>
               <span className="text-xl font-bold text-foreground">
-                TradeVault <span className="text-[#F7C948]">Pro</span>
+                {siteName} <span className="text-[#F7C948]">Pro</span>
               </span>
             </Link>
             <p className="text-muted-foreground max-w-sm mb-6">
-              Platform premium untuk trader profesional. Download ebook, indicator, EA trading, dan akses tools trading terbaik.
+              Platform premium untuk trader profesional. Download ebook,
+              indicator, EA trading, dan akses tools trading terbaik.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (
@@ -111,7 +156,7 @@ export function Footer() {
         <div className="border-t border-[#2A3142] mt-12 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-muted-foreground text-sm">
-              2024 TradeVault Pro. All rights reserved.
+              {currentYear} {siteName} Pro. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Shield className="w-4 h-4" />
@@ -121,5 +166,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
