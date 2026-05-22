@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 
-// GET produk yang dimiliki user (dengan detail)
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
@@ -29,22 +28,18 @@ export async function GET(
     `;
 
     return NextResponse.json({ ebooks, eas, indicators });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch user products" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// POST assign produk ke user (bisa multiple)
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
     const body = await request.json();
-    const { products } = body; // Array of { type: 'ebook'|'ea'|'indicator', id: number }
+    const { products } = body;
 
     if (!Array.isArray(products)) {
       return NextResponse.json(
@@ -52,9 +47,6 @@ export async function POST(
         { status: 400 },
       );
     }
-
-    // Hapus produk lama dan insert yang baru (replace mode)
-    // Atau bisa pakai ON CONFLICT jika ingin incremental
 
     await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
 
@@ -67,10 +59,7 @@ export async function POST(
     }
 
     return NextResponse.json({ message: "Products assigned successfully" });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to assign products" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

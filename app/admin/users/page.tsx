@@ -16,6 +16,9 @@ import {
   Shield,
   Check,
   X,
+  FileText,
+  Bot,
+  LineChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +51,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface User {
   id: number;
@@ -56,23 +58,13 @@ interface User {
   email: string;
   date: string;
   status: string;
-  plan: string;
-  downloads: number;
   products?: any[];
-}
-
-interface Product {
-  id: number;
-  name?: string;
-  title?: string;
-  type: string;
 }
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [planFilter, setPlanFilter] = useState("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -81,8 +73,6 @@ export default function AdminUsersPage() {
     name: "",
     email: "",
     status: "Active",
-    plan: "Free",
-    downloads: 0,
   });
   const [ebooks, setEbooks] = useState<any[]>([]);
   const [eas, setEas] = useState<any[]>([]);
@@ -91,6 +81,7 @@ export default function AdminUsersPage() {
     { type: string; id: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -100,10 +91,12 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
+      setError("Failed to load users. Check database connection.");
     } finally {
       setLoading(false);
     }
@@ -116,9 +109,18 @@ export default function AdminUsersPage() {
         fetch("/api/eas"),
         fetch("/api/indicators"),
       ]);
-      setEbooks(await ebooksRes.json());
-      setEas(await easRes.json());
-      setIndicators(await indicatorsRes.json());
+      if (ebooksRes.ok) {
+        const data = await ebooksRes.json();
+        setEbooks(Array.isArray(data) ? data : []);
+      }
+      if (easRes.ok) {
+        const data = await easRes.json();
+        setEas(Array.isArray(data) ? data : []);
+      }
+      if (indicatorsRes.ok) {
+        const data = await indicatorsRes.json();
+        setIndicators(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error("Failed to fetch products:", error);
     }
@@ -129,17 +131,12 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, products: selectedProducts }),
       });
       if (res.ok) {
         setIsAddDialogOpen(false);
-        setFormData({
-          name: "",
-          email: "",
-          status: "Active",
-          plan: "Free",
-          downloads: 0,
-        });
+        setFormData({ name: "", email: "", status: "Active" });
+        setSelectedProducts([]);
         fetchUsers();
       }
     } catch (error) {
@@ -153,11 +150,12 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/users/${selectedUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, products: selectedProducts }),
       });
       if (res.ok) {
         setIsEditDialogOpen(false);
         setSelectedUser(null);
+        setSelectedProducts([]);
         fetchUsers();
       }
     } catch (error) {
@@ -175,16 +173,13 @@ export default function AdminUsersPage() {
     }
   };
 
-  const openProductDialog = async (user: User) => {
+  const openProductDialog = async (user: User, isEdit: boolean = false) => {
     setSelectedUser(user);
     setIsProductDialogOpen(true);
-
-    // Fetch current user products
     try {
       const res = await fetch(`/api/users/${user.id}/products`);
       const data = await res.json();
       const currentProducts: { type: string; id: number }[] = [];
-
       data.ebooks?.forEach((e: any) =>
         currentProducts.push({ type: "ebook", id: e.id }),
       );
@@ -194,10 +189,10 @@ export default function AdminUsersPage() {
       data.indicators?.forEach((i: any) =>
         currentProducts.push({ type: "indicator", id: i.id }),
       );
-
       setSelectedProducts(currentProducts);
     } catch (error) {
       console.error("Failed to fetch user products:", error);
+      setSelectedProducts([]);
     }
   };
 
@@ -232,20 +227,48 @@ export default function AdminUsersPage() {
     return selectedProducts.some((p) => p.type === type && p.id === id);
   };
 
+  const getProductIcon = (type: string) => {
+    switch (type) {
+      case "ebook":
+        return <FileText className="w-3 h-3" />;
+      case "ea":
+        return <Bot className="w-3 h-3" />;
+      case "indicator":
+        return <LineChart className="w-3 h-3" />;
+      default:
+        return null;
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || user.status?.toLowerCase() === statusFilter;
-    const matchesPlan =
-      planFilter === "all" || user.plan?.toLowerCase() === planFilter;
-    return matchesSearch && matchesStatus && matchesPlan;
+    return matchesSearch && matchesStatus;
   });
 
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-[#EF4444] mb-4">{error}</p>
+        <Button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchUsers();
+          }}
+        >
+          Retry
+        </Button>
+      </div>
     );
   }
 
@@ -268,13 +291,8 @@ export default function AdminUsersPage() {
         <Button
           className="bg-[#2962FF] hover:bg-[#2962FF]/90 text-white"
           onClick={() => {
-            setFormData({
-              name: "",
-              email: "",
-              status: "Active",
-              plan: "Free",
-              downloads: 0,
-            });
+            setFormData({ name: "", email: "", status: "Active" });
+            setSelectedProducts([]);
             setIsAddDialogOpen(true);
           }}
         >
@@ -288,7 +306,7 @@ export default function AdminUsersPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6"
+        className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6"
       >
         <div className="glass-card rounded-xl p-4">
           <div className="text-2xl font-bold text-foreground">
@@ -301,12 +319,6 @@ export default function AdminUsersPage() {
             {users.filter((u) => u.status === "Active").length}
           </div>
           <div className="text-sm text-muted-foreground">Active Users</div>
-        </div>
-        <div className="glass-card rounded-xl p-4">
-          <div className="text-2xl font-bold text-[#F7C948]">
-            {users.filter((u) => u.plan === "Premium").length}
-          </div>
-          <div className="text-sm text-muted-foreground">Premium Users</div>
         </div>
         <div className="glass-card rounded-xl p-4">
           <div className="text-2xl font-bold text-[#EF4444]">
@@ -344,17 +356,6 @@ export default function AdminUsersPage() {
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger className="w-full sm:w-[150px] bg-[#1E2433] border-[#2A3142] text-foreground h-11">
-              <Shield className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Plan" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#151B28] border-[#2A3142]">
-              <SelectItem value="all">All Plans</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="free">Free</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </motion.div>
 
@@ -377,11 +378,7 @@ export default function AdminUsersPage() {
                   Join Date
                 </TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="text-muted-foreground">Plan</TableHead>
-                <TableHead className="text-muted-foreground hidden sm:table-cell">
-                  Downloads
-                </TableHead>
-                <TableHead className="text-muted-foreground hidden sm:table-cell">
+                <TableHead className="text-muted-foreground">
                   Products
                 </TableHead>
                 <TableHead className="text-muted-foreground w-[50px]"></TableHead>
@@ -428,28 +425,20 @@ export default function AdminUsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      className={
-                        user.plan === "Premium"
-                          ? "bg-[#F7C948] text-[#0B0F19]"
-                          : "bg-[#1E2433] text-muted-foreground"
-                      }
-                    >
-                      {user.plan}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Download className="w-3 h-3" />
-                      {user.downloads}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {user.products && user.products.length > 0 ? (
-                        <Badge variant="outline" className="text-xs">
-                          {user.products.length} items
-                        </Badge>
+                        user.products.map((p: any, idx: number) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-xs flex items-center gap-1"
+                          >
+                            {getProductIcon(p.type)}
+                            {p.type === "ebook" && "E"}
+                            {p.type === "ea" && "EA"}
+                            {p.type === "indicator" && "I"}
+                          </Badge>
+                        ))
                       ) : (
                         <span className="text-xs text-muted-foreground">
                           None
@@ -474,7 +463,7 @@ export default function AdminUsersPage() {
                       >
                         <DropdownMenuItem
                           className="text-foreground hover:bg-[#1E2433]"
-                          onClick={() => openProductDialog(user)}
+                          onClick={() => openProductDialog(user, true)}
                         >
                           <Shield className="w-4 h-4 mr-2" />
                           Assign Products
@@ -491,9 +480,8 @@ export default function AdminUsersPage() {
                               name: user.name,
                               email: user.email,
                               status: user.status,
-                              plan: user.plan,
-                              downloads: user.downloads,
                             });
+                            openProductDialog(user, true);
                             setIsEditDialogOpen(true);
                           }}
                         >
@@ -519,7 +507,7 @@ export default function AdminUsersPage() {
 
       {/* Add User Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground">
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
@@ -545,38 +533,147 @@ export default function AdminUsersPage() {
                 className="bg-[#1E2433] border-[#2A3142]"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v) => setFormData({ ...formData, status: v })}
-                >
-                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(v) => setFormData({ ...formData, status: v })}
+              >
+                <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Product Selection */}
+            <div className="space-y-4 pt-4 border-t border-[#2A3142]">
+              <h3 className="font-semibold text-foreground">Select Products</h3>
+
+              {/* Ebooks */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#EF4444] mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Ebooks
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ebooks.map((ebook) => (
+                    <div
+                      key={`ebook-${ebook.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("ebook", ebook.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("ebook", ebook.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("ebook", ebook.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("ebook", ebook.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {ebook.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ebook.category}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Plan</Label>
-                <Select
-                  value={formData.plan}
-                  onValueChange={(v) => setFormData({ ...formData, plan: v })}
-                >
-                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectItem value="Free">Free</SelectItem>
-                    <SelectItem value="Premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* EAs */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#F7C948] mb-2 flex items-center gap-2">
+                  <Bot className="w-4 h-4" /> Expert Advisors
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {eas.map((ea) => (
+                    <div
+                      key={`ea-${ea.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("ea", ea.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("ea", ea.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("ea", ea.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("ea", ea.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {ea.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ea.platform} | {ea.price}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Indicators */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#00C853] mb-2 flex items-center gap-2">
+                  <LineChart className="w-4 h-4" /> Indicators
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {indicators.map((indicator) => (
+                    <div
+                      key={`indicator-${indicator.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("indicator", indicator.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("indicator", indicator.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("indicator", indicator.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("indicator", indicator.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {indicator.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {indicator.platform} | {indicator.price}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
@@ -598,7 +695,7 @@ export default function AdminUsersPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground">
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
@@ -624,38 +721,147 @@ export default function AdminUsersPage() {
                 className="bg-[#1E2433] border-[#2A3142]"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v) => setFormData({ ...formData, status: v })}
-                >
-                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(v) => setFormData({ ...formData, status: v })}
+              >
+                <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Product Selection */}
+            <div className="space-y-4 pt-4 border-t border-[#2A3142]">
+              <h3 className="font-semibold text-foreground">Select Products</h3>
+
+              {/* Ebooks */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#EF4444] mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Ebooks
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ebooks.map((ebook) => (
+                    <div
+                      key={`ebook-${ebook.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("ebook", ebook.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("ebook", ebook.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("ebook", ebook.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("ebook", ebook.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {ebook.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ebook.category}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Plan</Label>
-                <Select
-                  value={formData.plan}
-                  onValueChange={(v) => setFormData({ ...formData, plan: v })}
-                >
-                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
-                    <SelectItem value="Free">Free</SelectItem>
-                    <SelectItem value="Premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* EAs */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#F7C948] mb-2 flex items-center gap-2">
+                  <Bot className="w-4 h-4" /> Expert Advisors
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {eas.map((ea) => (
+                    <div
+                      key={`ea-${ea.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("ea", ea.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("ea", ea.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("ea", ea.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("ea", ea.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {ea.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ea.platform} | {ea.price}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Indicators */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#00C853] mb-2 flex items-center gap-2">
+                  <LineChart className="w-4 h-4" /> Indicators
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {indicators.map((indicator) => (
+                    <div
+                      key={`indicator-${indicator.id}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isProductSelected("indicator", indicator.id)
+                          ? "border-[#2962FF] bg-[#2962FF]/10"
+                          : "border-[#2A3142] hover:bg-[#1E2433]"
+                      }`}
+                      onClick={() => toggleProduct("indicator", indicator.id)}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isProductSelected("indicator", indicator.id)
+                            ? "bg-[#2962FF] border-[#2962FF]"
+                            : "border-[#2A3142]"
+                        }`}
+                      >
+                        {isProductSelected("indicator", indicator.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {indicator.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {indicator.platform} | {indicator.price}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
@@ -675,7 +881,7 @@ export default function AdminUsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Products Dialog */}
+      {/* Assign Products Dialog (standalone) */}
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
         <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -685,7 +891,7 @@ export default function AdminUsersPage() {
             {/* Ebooks */}
             <div>
               <h3 className="text-sm font-semibold text-[#EF4444] mb-3 flex items-center gap-2">
-                <Download className="w-4 h-4" /> Ebooks
+                <FileText className="w-4 h-4" /> Ebooks
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {ebooks.map((ebook) => (
@@ -698,7 +904,17 @@ export default function AdminUsersPage() {
                     }`}
                     onClick={() => toggleProduct("ebook", ebook.id)}
                   >
-                    <Checkbox checked={isProductSelected("ebook", ebook.id)} />
+                    <div
+                      className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        isProductSelected("ebook", ebook.id)
+                          ? "bg-[#2962FF] border-[#2962FF]"
+                          : "border-[#2A3142]"
+                      }`}
+                    >
+                      {isProductSelected("ebook", ebook.id) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {ebook.title}
@@ -715,7 +931,7 @@ export default function AdminUsersPage() {
             {/* EAs */}
             <div>
               <h3 className="text-sm font-semibold text-[#F7C948] mb-3 flex items-center gap-2">
-                <Shield className="w-4 h-4" /> Expert Advisors
+                <Bot className="w-4 h-4" /> Expert Advisors
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {eas.map((ea) => (
@@ -728,7 +944,17 @@ export default function AdminUsersPage() {
                     }`}
                     onClick={() => toggleProduct("ea", ea.id)}
                   >
-                    <Checkbox checked={isProductSelected("ea", ea.id)} />
+                    <div
+                      className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        isProductSelected("ea", ea.id)
+                          ? "bg-[#2962FF] border-[#2962FF]"
+                          : "border-[#2A3142]"
+                      }`}
+                    >
+                      {isProductSelected("ea", ea.id) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {ea.name}
@@ -745,7 +971,7 @@ export default function AdminUsersPage() {
             {/* Indicators */}
             <div>
               <h3 className="text-sm font-semibold text-[#00C853] mb-3 flex items-center gap-2">
-                <Pencil className="w-4 h-4" /> Indicators
+                <LineChart className="w-4 h-4" /> Indicators
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {indicators.map((indicator) => (
@@ -758,9 +984,17 @@ export default function AdminUsersPage() {
                     }`}
                     onClick={() => toggleProduct("indicator", indicator.id)}
                   >
-                    <Checkbox
-                      checked={isProductSelected("indicator", indicator.id)}
-                    />
+                    <div
+                      className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        isProductSelected("indicator", indicator.id)
+                          ? "bg-[#2962FF] border-[#2962FF]"
+                          : "border-[#2A3142]"
+                      }`}
+                    >
+                      {isProductSelected("indicator", indicator.id) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {indicator.name}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   LineChart,
@@ -14,6 +14,7 @@ import {
   Download,
   Upload,
   Code,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ interface Indicator {
   status: string;
   price: string;
   updated_at: string;
+  file_url?: string;
 }
 
 export default function AdminIndicatorPage() {
@@ -67,8 +69,11 @@ export default function AdminIndicatorPage() {
     status: "active",
     price: "Free",
     updated_at: "",
+    file_url: "",
   });
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchIndicators();
@@ -79,15 +84,40 @@ export default function AdminIndicatorPage() {
       const res = await fetch("/api/indicators");
       const data = await res.json();
       setIndicators(
-        data.map((i: any) => ({
-          ...i,
-          updatedAt: i.updated_at || i.updatedAt,
-        })),
+        Array.isArray(data)
+          ? data.map((i: any) => ({
+              ...i,
+              updatedAt: i.updated_at || i.updatedAt,
+            }))
+          : [],
       );
     } catch (error) {
       console.error("Failed to fetch indicators:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData((prev) => ({ ...prev, file_url: data.url }));
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -108,6 +138,7 @@ export default function AdminIndicatorPage() {
           status: "active",
           price: "Free",
           updated_at: "",
+          file_url: "",
         });
         fetchIndicators();
       }
@@ -242,16 +273,55 @@ export default function AdminIndicatorPage() {
                   rows={3}
                 />
               </div>
+              {/* Upload File */}
               <div className="space-y-2">
                 <Label>Upload Files (.ex4/.ex5)</Label>
-                <div className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Click to upload indicator files
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    .ex4, .ex5, .mq4, .mq5
-                  </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".ex4,.ex5,.mq4,.mq5"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileUpload(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div
+                  className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {formData.file_url ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <LineChart className="w-5 h-5 text-[#10B981]" />
+                      <span className="text-sm text-[#10B981]">
+                        File uploaded
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData({ ...formData, file_url: "" });
+                        }}
+                        className="ml-2"
+                      >
+                        <X className="w-4 h-4 text-[#EF4444]" />
+                      </button>
+                    </div>
+                  ) : uploading ? (
+                    <span className="text-sm text-muted-foreground">
+                      Uploading...
+                    </span>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload indicator files
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        .ex4, .ex5, .mq4, .mq5
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 pt-4">
@@ -331,6 +401,7 @@ export default function AdminIndicatorPage() {
                         status: indicator.status,
                         price: indicator.price,
                         updated_at: indicator.updated_at || "",
+                        file_url: indicator.file_url || "",
                       });
                       setIsEditDialogOpen(true);
                     }}
@@ -342,6 +413,12 @@ export default function AdminIndicatorPage() {
                     <Code className="w-4 h-4 mr-2" />
                     View Source
                   </DropdownMenuItem>
+                  {indicator.file_url && (
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download File
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     className="cursor-pointer text-[#EF4444]"
                     onClick={() => handleDelete(indicator.id)}
@@ -359,6 +436,9 @@ export default function AdminIndicatorPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Version {indicator.version}
             </p>
+            {indicator.file_url && (
+              <p className="text-xs text-[#10B981] mb-2">File ready</p>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="px-2 py-1 rounded-md bg-[#1E2433] text-xs text-foreground">
@@ -475,6 +555,51 @@ export default function AdminIndicatorPage() {
                   <SelectItem value="beta">Beta</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            {/* Upload File in Edit */}
+            <div className="space-y-2">
+              <Label>Upload Files (.ex4/.ex5)</Label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".ex4,.ex5,.mq4,.mq5"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleFileUpload(e.target.files[0]);
+                  }
+                }}
+              />
+              <div
+                className="border-2 border-dashed border-[#2A3142] rounded-lg p-4 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.file_url ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <LineChart className="w-5 h-5 text-[#10B981]" />
+                    <span className="text-sm text-[#10B981]">
+                      File uploaded
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ ...formData, file_url: "" });
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-4 h-4 text-[#EF4444]" />
+                    </button>
+                  </div>
+                ) : uploading ? (
+                  <span className="text-sm text-muted-foreground">
+                    Uploading...
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Click to upload indicator files
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2 pt-4">
               <Button

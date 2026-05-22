@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Bot,
@@ -17,6 +17,7 @@ import {
   Pause,
   Settings,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,71 +44,147 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const expertAdvisors = [
-  {
-    id: 1,
-    name: "Gold Scalper Pro",
-    platform: "MT4",
-    version: "3.2.1",
-    downloads: 2456,
-    status: "active",
-    winRate: 78.5,
-    pairs: ["XAUUSD"],
-    price: "Premium",
-  },
-  {
-    id: 2,
-    name: "Trend Master EA",
-    platform: "MT5",
-    version: "2.1.0",
-    downloads: 1891,
-    status: "active",
-    winRate: 72.3,
-    pairs: ["EURUSD", "GBPUSD"],
-    price: "Premium",
-  },
-  {
-    id: 3,
-    name: "Grid Trading Bot",
-    platform: "MT4/MT5",
-    version: "1.5.2",
-    downloads: 3123,
-    status: "maintenance",
-    winRate: 65.8,
-    pairs: ["Multi-pair"],
-    price: "Free",
-  },
-  {
-    id: 4,
-    name: "News Trader EA",
-    platform: "MT4",
-    version: "4.0.0",
-    downloads: 1567,
-    status: "active",
-    winRate: 81.2,
-    pairs: ["EURUSD", "USDJPY"],
-    price: "Premium",
-  },
-  {
-    id: 5,
-    name: "Martingale Safe",
-    platform: "MT5",
-    version: "2.8.1",
-    downloads: 987,
-    status: "beta",
-    winRate: 68.9,
-    pairs: ["GBPJPY"],
-    price: "Premium",
-  },
-];
+interface EA {
+  id: number;
+  name: string;
+  platform: string;
+  version: string;
+  downloads: number;
+  status: string;
+  win_rate: number;
+  pairs: string[];
+  price: string;
+  file_url?: string;
+}
 
 export default function AdminEAPage() {
+  const [expertAdvisors, setExpertAdvisors] = useState<EA[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEA, setSelectedEA] = useState<EA | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    platform: "MT4",
+    version: "",
+    downloads: 0,
+    status: "active",
+    win_rate: 0,
+    pairs: "",
+    price: "Free",
+    file_url: "",
+  });
+  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredEAs = expertAdvisors.filter((ea) =>
-    ea.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  useEffect(() => {
+    fetchEAs();
+  }, []);
+
+  const fetchEAs = async () => {
+    try {
+      const res = await fetch("/api/eas");
+      const data = await res.json();
+      setExpertAdvisors(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch EAs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData((prev) => ({ ...prev, file_url: data.url }));
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAdd = async () => {
+    try {
+      const payload = {
+        ...formData,
+        pairs: formData.pairs
+          .split(",")
+          .map((p: string) => p.trim())
+          .filter(Boolean),
+      };
+      const res = await fetch("/api/eas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setIsAddDialogOpen(false);
+        setFormData({
+          name: "",
+          platform: "MT4",
+          version: "",
+          downloads: 0,
+          status: "active",
+          win_rate: 0,
+          pairs: "",
+          price: "Free",
+          file_url: "",
+        });
+        fetchEAs();
+      }
+    } catch (error) {
+      console.error("Failed to add EA:", error);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!selectedEA) return;
+    try {
+      const payload = {
+        ...formData,
+        pairs: formData.pairs
+          .split(",")
+          .map((p: string) => p.trim())
+          .filter(Boolean),
+      };
+      const res = await fetch(`/api/eas/${selectedEA.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setIsEditDialogOpen(false);
+        setSelectedEA(null);
+        fetchEAs();
+      }
+    } catch (error) {
+      console.error("Failed to edit EA:", error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure?")) return;
+    try {
+      const res = await fetch(`/api/eas/${id}`, { method: "DELETE" });
+      if (res.ok) fetchEAs();
+    } catch (error) {
+      console.error("Failed to delete EA:", error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,8 +199,17 @@ export default function AdminEAPage() {
     }
   };
 
+  const filteredEAs = expertAdvisors.filter((ea) =>
+    ea.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  if (loading)
+    return (
+      <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -147,6 +233,10 @@ export default function AdminEAPage() {
               <div className="space-y-2">
                 <Label>EA Name</Label>
                 <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Enter EA name"
                   className="bg-[#1E2433] border-[#2A3142]"
                 />
@@ -154,20 +244,29 @@ export default function AdminEAPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Platform</Label>
-                  <Select>
+                  <Select
+                    value={formData.platform}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, platform: v })
+                    }
+                  >
                     <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1E2433] border-[#2A3142]">
-                      <SelectItem value="mt4">MT4</SelectItem>
-                      <SelectItem value="mt5">MT5</SelectItem>
-                      <SelectItem value="both">MT4/MT5</SelectItem>
+                      <SelectItem value="MT4">MT4</SelectItem>
+                      <SelectItem value="MT5">MT5</SelectItem>
+                      <SelectItem value="MT4/MT5">MT4/MT5</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Version</Label>
                   <Input
+                    value={formData.version}
+                    onChange={(e) =>
+                      setFormData({ ...formData, version: e.target.value })
+                    }
                     placeholder="e.g., 1.0.0"
                     className="bg-[#1E2433] border-[#2A3142]"
                   />
@@ -176,9 +275,46 @@ export default function AdminEAPage() {
               <div className="space-y-2">
                 <Label>Trading Pairs</Label>
                 <Input
+                  value={formData.pairs}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pairs: e.target.value })
+                  }
                   placeholder="e.g., XAUUSD, EURUSD"
                   className="bg-[#1E2433] border-[#2A3142]"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Win Rate (%)</Label>
+                  <Input
+                    type="number"
+                    value={formData.win_rate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        win_rate: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="bg-[#1E2433] border-[#2A3142]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Price</Label>
+                  <Select
+                    value={formData.price}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, price: v })
+                    }
+                  >
+                    <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                      <SelectItem value="Free">Free</SelectItem>
+                      <SelectItem value="Premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -188,16 +324,55 @@ export default function AdminEAPage() {
                   rows={3}
                 />
               </div>
+              {/* Upload File */}
               <div className="space-y-2">
                 <Label>Upload EA Files</Label>
-                <div className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Click to upload EA files
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    .ex4, .ex5
-                  </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".ex4,.ex5,.mq4,.mq5"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileUpload(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div
+                  className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {formData.file_url ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Bot className="w-5 h-5 text-[#10B981]" />
+                      <span className="text-sm text-[#10B981]">
+                        File uploaded
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData({ ...formData, file_url: "" });
+                        }}
+                        className="ml-2"
+                      >
+                        <X className="w-4 h-4 text-[#EF4444]" />
+                      </button>
+                    </div>
+                  ) : uploading ? (
+                    <span className="text-sm text-muted-foreground">
+                      Uploading...
+                    </span>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload EA files
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        .ex4, .ex5
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 pt-4">
@@ -208,7 +383,10 @@ export default function AdminEAPage() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]">
+                <Button
+                  className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                  onClick={handleAdd}
+                >
                   Save EA
                 </Button>
               </div>
@@ -254,6 +432,9 @@ export default function AdminEAPage() {
                   <p className="text-sm text-muted-foreground">
                     {ea.platform} | v{ea.version}
                   </p>
+                  {ea.file_url && (
+                    <p className="text-xs text-[#10B981]">File ready</p>
+                  )}
                 </div>
               </div>
               <DropdownMenu>
@@ -274,11 +455,39 @@ export default function AdminEAPage() {
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer">
+                  {ea.file_url && (
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download File
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setSelectedEA(ea);
+                      setFormData({
+                        name: ea.name,
+                        platform: ea.platform,
+                        version: ea.version,
+                        downloads: ea.downloads,
+                        status: ea.status,
+                        win_rate: ea.win_rate,
+                        pairs: Array.isArray(ea.pairs)
+                          ? ea.pairs.join(", ")
+                          : ea.pairs,
+                        price: ea.price,
+                        file_url: ea.file_url || "",
+                      });
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer text-[#EF4444]">
+                  <DropdownMenuItem
+                    className="cursor-pointer text-[#EF4444]"
+                    onClick={() => handleDelete(ea.id)}
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </DropdownMenuItem>
@@ -288,7 +497,9 @@ export default function AdminEAPage() {
 
             <div className="flex flex-wrap gap-2 mb-4">
               <span
-                className={`px-2 py-1 rounded-md text-xs ${getStatusColor(ea.status)}`}
+                className={`px-2 py-1 rounded-md text-xs ${getStatusColor(
+                  ea.status,
+                )}`}
               >
                 {ea.status}
               </span>
@@ -301,14 +512,15 @@ export default function AdminEAPage() {
               >
                 {ea.price}
               </span>
-              {ea.pairs.map((pair) => (
-                <span
-                  key={pair}
-                  className="px-2 py-1 rounded-md bg-[#1E2433] text-xs text-foreground"
-                >
-                  {pair}
-                </span>
-              ))}
+              {Array.isArray(ea.pairs) &&
+                ea.pairs.map((pair: string) => (
+                  <span
+                    key={pair}
+                    className="px-2 py-1 rounded-md bg-[#1E2433] text-xs text-foreground"
+                  >
+                    {pair}
+                  </span>
+                ))}
             </div>
 
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#2A3142]">
@@ -317,7 +529,7 @@ export default function AdminEAPage() {
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="w-4 h-4 text-[#10B981]" />
                   <span className="font-semibold text-[#10B981]">
-                    {ea.winRate}%
+                    {ea.win_rate}%
                   </span>
                 </div>
               </div>
@@ -348,6 +560,158 @@ export default function AdminEAPage() {
         ))}
       </div>
 
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Expert Advisor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>EA Name</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="bg-[#1E2433] border-[#2A3142]"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Platform</Label>
+                <Select
+                  value={formData.platform}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, platform: v })
+                  }
+                >
+                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                    <SelectItem value="MT4">MT4</SelectItem>
+                    <SelectItem value="MT5">MT5</SelectItem>
+                    <SelectItem value="MT4/MT5">MT4/MT5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Version</Label>
+                <Input
+                  value={formData.version}
+                  onChange={(e) =>
+                    setFormData({ ...formData, version: e.target.value })
+                  }
+                  className="bg-[#1E2433] border-[#2A3142]"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Trading Pairs</Label>
+              <Input
+                value={formData.pairs}
+                onChange={(e) =>
+                  setFormData({ ...formData, pairs: e.target.value })
+                }
+                className="bg-[#1E2433] border-[#2A3142]"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Win Rate (%)</Label>
+                <Input
+                  type="number"
+                  value={formData.win_rate}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      win_rate: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="bg-[#1E2433] border-[#2A3142]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Price</Label>
+                <Select
+                  value={formData.price}
+                  onValueChange={(v) => setFormData({ ...formData, price: v })}
+                >
+                  <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                    <SelectItem value="Free">Free</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {/* Upload File in Edit */}
+            <div className="space-y-2">
+              <Label>Upload EA Files</Label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".ex4,.ex5,.mq4,.mq5"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleFileUpload(e.target.files[0]);
+                  }
+                }}
+              />
+              <div
+                className="border-2 border-dashed border-[#2A3142] rounded-lg p-4 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.file_url ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Bot className="w-5 h-5 text-[#10B981]" />
+                    <span className="text-sm text-[#10B981]">
+                      File uploaded
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ ...formData, file_url: "" });
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-4 h-4 text-[#EF4444]" />
+                    </button>
+                  </div>
+                ) : uploading ? (
+                  <span className="text-sm text-muted-foreground">
+                    Uploading...
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Click to upload EA files
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-[#2A3142]"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                onClick={handleEdit}
+              >
+                Update
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#0D1117] border border-[#2A3142] rounded-xl p-4">
@@ -368,8 +732,8 @@ export default function AdminEAPage() {
           <p className="text-sm text-muted-foreground">Avg Win Rate</p>
           <p className="text-2xl font-bold text-[#10B981] mt-1">
             {(
-              expertAdvisors.reduce((acc, ea) => acc + ea.winRate, 0) /
-              expertAdvisors.length
+              expertAdvisors.reduce((acc, ea) => acc + (ea.win_rate || 0), 0) /
+              (expertAdvisors.length || 1)
             ).toFixed(1)}
             %
           </p>

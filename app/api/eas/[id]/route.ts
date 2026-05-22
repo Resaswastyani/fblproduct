@@ -12,8 +12,8 @@ export async function GET(
       return NextResponse.json({ error: "EA not found" }, { status: 404 });
     }
     return NextResponse.json(eas[0]);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch EA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -32,6 +32,7 @@ export async function PUT(
       win_rate,
       pairs,
       price,
+      file_url,
     } = body;
 
     const result = await sql`
@@ -45,14 +46,15 @@ export async function PUT(
         win_rate = COALESCE(${win_rate}, win_rate),
         pairs = COALESCE(${pairs}, pairs),
         price = COALESCE(${price}, price),
+        file_url = COALESCE(${file_url}, file_url),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.id}
       RETURNING *
     `;
 
     return NextResponse.json(result[0]);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to update EA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -63,7 +65,7 @@ export async function DELETE(
   try {
     await sql`DELETE FROM expert_advisors WHERE id = ${params.id}`;
     return NextResponse.json({ message: "EA deleted successfully" });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to delete EA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

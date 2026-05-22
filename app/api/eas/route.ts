@@ -5,8 +5,8 @@ export async function GET() {
   try {
     const eas = await sql`SELECT * FROM expert_advisors ORDER BY id DESC`;
     return NextResponse.json(eas);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch EAs" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -22,19 +22,20 @@ export async function POST(request: Request) {
       win_rate,
       pairs,
       price,
+      file_url,
     } = body;
 
     const result = await sql`
-      INSERT INTO expert_advisors (name, platform, version, downloads, status, win_rate, pairs, price)
+      INSERT INTO expert_advisors (name, platform, version, downloads, status, win_rate, pairs, price, file_url)
       VALUES (
         ${name}, ${platform}, ${version}, ${downloads || 0}, 
-        ${status || "active"}, ${win_rate || 0}, ${pairs || []}, ${price || "Free"}
+        ${status || "active"}, ${win_rate || 0}, ${pairs || []}, ${price || "Free"}, ${file_url || null}
       )
       RETURNING *
     `;
 
     return NextResponse.json(result[0], { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to create EA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

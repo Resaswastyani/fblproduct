@@ -29,11 +29,8 @@ export async function GET(
     }
 
     return NextResponse.json(users[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch user" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -43,27 +40,34 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { name, email, status, plan, downloads } = body;
+    const { name, email, status, products } = body;
 
+    // Update user
     const result = await sql`
       UPDATE users 
       SET 
         name = COALESCE(${name}, name),
         email = COALESCE(${email}, email),
         status = COALESCE(${status}, status),
-        plan = COALESCE(${plan}, plan),
-        downloads = COALESCE(${downloads}, downloads),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.id}
       RETURNING *
     `;
 
+    // Update products kalau ada
+    if (products && Array.isArray(products)) {
+      await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
+      for (const product of products) {
+        await sql`
+          INSERT INTO user_products (user_id, product_type, product_id)
+          VALUES (${params.id}, ${product.type}, ${product.id})
+        `;
+      }
+    }
+
     return NextResponse.json(result[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -74,10 +78,7 @@ export async function DELETE(
   try {
     await sql`DELETE FROM users WHERE id = ${params.id}`;
     return NextResponse.json({ message: "User deleted successfully" });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

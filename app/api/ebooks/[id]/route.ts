@@ -11,11 +11,8 @@ export async function GET(
       return NextResponse.json({ error: "Ebook not found" }, { status: 404 });
     }
     return NextResponse.json(ebooks[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch ebook" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -25,7 +22,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { title, category, pages, downloads, status } = body;
+    const { title, category, pages, downloads, status, file_url } = body;
 
     const result = await sql`
       UPDATE ebooks 
@@ -35,17 +32,15 @@ export async function PUT(
         pages = COALESCE(${pages}, pages),
         downloads = COALESCE(${downloads}, downloads),
         status = COALESCE(${status}, status),
+        file_url = COALESCE(${file_url}, file_url),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.id}
       RETURNING *
     `;
 
     return NextResponse.json(result[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update ebook" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -56,10 +51,7 @@ export async function DELETE(
   try {
     await sql`DELETE FROM ebooks WHERE id = ${params.id}`;
     return NextResponse.json({ message: "Ebook deleted successfully" });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete ebook" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

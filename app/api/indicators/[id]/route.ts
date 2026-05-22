@@ -15,11 +15,8 @@ export async function GET(
       );
     }
     return NextResponse.json(indicators[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch indicator" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -29,8 +26,16 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { name, platform, version, downloads, status, price, updated_at } =
-      body;
+    const {
+      name,
+      platform,
+      version,
+      downloads,
+      status,
+      price,
+      updated_at,
+      file_url,
+    } = body;
 
     const result = await sql`
       UPDATE indicators 
@@ -42,17 +47,15 @@ export async function PUT(
         status = COALESCE(${status}, status),
         price = COALESCE(${price}, price),
         updated_at = COALESCE(${updated_at}, updated_at),
+        file_url = COALESCE(${file_url}, file_url),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.id}
       RETURNING *
     `;
 
     return NextResponse.json(result[0]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update indicator" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -63,10 +66,7 @@ export async function DELETE(
   try {
     await sql`DELETE FROM indicators WHERE id = ${params.id}`;
     return NextResponse.json({ message: "Indicator deleted successfully" });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete indicator" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

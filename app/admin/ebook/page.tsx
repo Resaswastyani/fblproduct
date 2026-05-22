@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -13,6 +13,7 @@ import {
   Eye,
   Download,
   Upload,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ interface Ebook {
   pages: number;
   downloads: number;
   status: string;
+  file_url?: string;
   createdAt: string;
 }
 
@@ -62,8 +64,11 @@ export default function AdminEbookPage() {
     downloads: 0,
     status: "draft",
     description: "",
+    file_url: "",
   });
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchEbooks();
@@ -74,15 +79,40 @@ export default function AdminEbookPage() {
       const res = await fetch("/api/ebooks");
       const data = await res.json();
       setEbooks(
-        data.map((e: any) => ({
-          ...e,
-          createdAt: e.created_at?.split("T")[0] || e.createdAt,
-        })),
+        Array.isArray(data)
+          ? data.map((e: any) => ({
+              ...e,
+              createdAt: e.created_at?.split("T")[0] || e.createdAt,
+            }))
+          : [],
       );
     } catch (error) {
       console.error("Failed to fetch ebooks:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData((prev) => ({ ...prev, file_url: data.url }));
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -102,6 +132,7 @@ export default function AdminEbookPage() {
           downloads: 0,
           status: "draft",
           description: "",
+          file_url: "",
         });
         fetchEbooks();
       }
@@ -226,16 +257,55 @@ export default function AdminEbookPage() {
                   rows={3}
                 />
               </div>
+              {/* Upload File */}
               <div className="space-y-2">
                 <Label>Upload PDF</Label>
-                <div className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PDF (max 50MB)
-                  </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileUpload(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div
+                  className="border-2 border-dashed border-[#2A3142] rounded-lg p-6 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {formData.file_url ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <FileText className="w-5 h-5 text-[#10B981]" />
+                      <span className="text-sm text-[#10B981]">
+                        File uploaded
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData({ ...formData, file_url: "" });
+                        }}
+                        className="ml-2"
+                      >
+                        <X className="w-4 h-4 text-[#EF4444]" />
+                      </button>
+                    </div>
+                  ) : uploading ? (
+                    <span className="text-sm text-muted-foreground">
+                      Uploading...
+                    </span>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PDF (max 50MB)
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 pt-4">
@@ -322,6 +392,9 @@ export default function AdminEbookPage() {
                         <p className="text-xs text-muted-foreground sm:hidden">
                           {ebook.category}
                         </p>
+                        {ebook.file_url && (
+                          <p className="text-xs text-[#10B981]">PDF ready</p>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -365,6 +438,12 @@ export default function AdminEbookPage() {
                           <Eye className="w-4 h-4 mr-2" />
                           View
                         </DropdownMenuItem>
+                        {ebook.file_url && (
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           className="cursor-pointer"
                           onClick={() => {
@@ -376,6 +455,7 @@ export default function AdminEbookPage() {
                               downloads: ebook.downloads,
                               status: ebook.status,
                               description: "",
+                              file_url: ebook.file_url || "",
                             });
                             setIsEditDialogOpen(true);
                           }}
@@ -464,6 +544,51 @@ export default function AdminEbookPage() {
                     <SelectItem value="draft">Draft</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            {/* Upload File in Edit */}
+            <div className="space-y-2">
+              <Label>Upload PDF</Label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleFileUpload(e.target.files[0]);
+                  }
+                }}
+              />
+              <div
+                className="border-2 border-dashed border-[#2A3142] rounded-lg p-4 text-center hover:border-[#EF4444] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.file_url ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <FileText className="w-5 h-5 text-[#10B981]" />
+                    <span className="text-sm text-[#10B981]">
+                      File uploaded
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ ...formData, file_url: "" });
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-4 h-4 text-[#EF4444]" />
+                    </button>
+                  </div>
+                ) : uploading ? (
+                  <span className="text-sm text-muted-foreground">
+                    Uploading...
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Click to upload PDF
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex gap-2 pt-4">
