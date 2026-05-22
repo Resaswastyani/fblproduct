@@ -314,14 +314,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [siteName, setSiteName] = useState("Forex For Better Living");
 
-  // Load custom logo from admin settings
+  // Load custom logo & site name from admin settings
   useEffect(() => {
     try {
       const raw = localStorage.getItem("admin_settings");
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed.logo) setLogoUrl(parsed.logo);
+        if (parsed.siteName) setSiteName(parsed.siteName);
       }
     } catch {
       // ignore parse error
@@ -384,19 +386,19 @@ export default function LoginPage() {
         className="relative z-10 w-full max-w-md"
       >
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-xl gradient-gold flex items-center justify-center overflow-hidden">
+          <div className="w-12 h-12 rounded-xl gradient-gold flex items-center justify-center overflow-hidden p-1">
             {logoUrl ? (
               <img
                 src={logoUrl}
                 alt="Logo"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             ) : (
-              <span className="text-[#0B0F19] font-bold text-xl">TV</span>
+              <span className="text-[#0B0F19] font-bold text-xl">FBL</span>
             )}
           </div>
           <span className="text-2xl font-bold text-foreground">
-            TradeVault <span className="text-[#F7C948]">Pro</span>
+            {siteName} <span className="text-[#F7C948]">Pro</span>
           </span>
         </Link>
 
