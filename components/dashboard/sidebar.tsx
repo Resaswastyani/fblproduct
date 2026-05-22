@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   BookOpen,
@@ -17,30 +17,50 @@ import {
   Menu,
   X,
   ChevronRight,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/ebook", icon: BookOpen, label: "Ebook PDF" },
   { href: "/dashboard/indicator", icon: LineChart, label: "Indicator" },
   { href: "/dashboard/ea", icon: Bot, label: "EA Trading" },
-  { href: "/dashboard/calculator", icon: Calculator, label: "Position Size Calculator" },
+  {
+    href: "/dashboard/calculator",
+    icon: Calculator,
+    label: "Position Size Calculator",
+  },
   { href: "/dashboard/video", icon: Video, label: "Video Tutorial" },
   { href: "/dashboard/downloads", icon: Download, label: "Download Center" },
   { href: "/dashboard/profile", icon: User, label: "Profile" },
-]
+];
 
 const mobileNavLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { href: "/dashboard/downloads", icon: Download, label: "Download" },
   { href: "/dashboard/calculator", icon: Calculator, label: "Calculator" },
   { href: "/dashboard/profile", icon: User, label: "Profile" },
-]
+];
 
 export function DashboardSidebar() {
-  const pathname = usePathname()
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [siteName, setSiteName] = useState("Forex For Better Living");
+
+  // Load custom logo & site name from admin settings
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("admin_settings");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.logo) setLogoUrl(parsed.logo);
+        if (parsed.siteName) setSiteName(parsed.siteName);
+      }
+    } catch {
+      // ignore parse error
+    }
+  }, []);
 
   return (
     <>
@@ -49,11 +69,19 @@ export function DashboardSidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-[#0B0F19] font-bold text-lg">TV</span>
+            <div className="w-10 h-10 rounded-lg gradient-gold flex items-center justify-center overflow-hidden p-1">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-[#0B0F19] font-bold text-lg">FBL</span>
+              )}
             </div>
             <span className="text-lg font-bold text-sidebar-foreground">
-              TradeVault <span className="text-[#F7C948]">Pro</span>
+              {siteName} <span className="text-[#F7C948]">Pro</span>
             </span>
           </Link>
         </div>
@@ -62,7 +90,7 @@ export function DashboardSidebar() {
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-1">
             {sidebarLinks.map((link) => {
-              const isActive = pathname === link.href
+              const isActive = pathname === link.href;
               return (
                 <li key={link.href}>
                   <Link
@@ -71,7 +99,7 @@ export function DashboardSidebar() {
                       "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                       isActive
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                     )}
                   >
                     <link.icon className="w-5 h-5" />
@@ -79,7 +107,7 @@ export function DashboardSidebar() {
                     {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
                   </Link>
                 </li>
-              )
+              );
             })}
           </ul>
         </nav>
@@ -100,18 +128,30 @@ export function DashboardSidebar() {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-[#0B0F19] font-bold text-sm">TV</span>
+            <div className="w-8 h-8 rounded-lg gradient-gold flex items-center justify-center overflow-hidden p-1">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-[#0B0F19] font-bold text-sm">FBL</span>
+              )}
             </div>
             <span className="text-lg font-bold text-foreground">
-              TradeVault <span className="text-[#F7C948]">Pro</span>
+              {siteName} <span className="text-[#F7C948]">Pro</span>
             </span>
           </Link>
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             className="p-2 text-foreground"
           >
-            {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </header>
@@ -128,7 +168,7 @@ export function DashboardSidebar() {
             <nav className="p-4">
               <ul className="space-y-1">
                 {sidebarLinks.map((link, index) => {
-                  const isActive = pathname === link.href
+                  const isActive = pathname === link.href;
                   return (
                     <motion.li
                       key={link.href}
@@ -143,14 +183,14 @@ export function DashboardSidebar() {
                           "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                           isActive
                             ? "bg-[#2962FF] text-white"
-                            : "text-foreground/70 hover:bg-[#1E2433] hover:text-foreground"
+                            : "text-foreground/70 hover:bg-[#1E2433] hover:text-foreground",
                         )}
                       >
                         <link.icon className="w-5 h-5" />
                         {link.label}
                       </Link>
                     </motion.li>
-                  )
+                  );
                 })}
                 <motion.li
                   initial={{ opacity: 0, x: -20 }}
@@ -176,23 +216,23 @@ export function DashboardSidebar() {
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-[#2A3142]">
         <div className="flex items-center justify-around py-2">
           {mobileNavLinks.map((link) => {
-            const isActive = pathname === link.href
+            const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors min-w-[60px]",
-                  isActive ? "text-[#F7C948]" : "text-muted-foreground"
+                  isActive ? "text-[#F7C948]" : "text-muted-foreground",
                 )}
               >
                 <link.icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{link.label}</span>
               </Link>
-            )
+            );
           })}
         </div>
       </nav>
     </>
-  )
+  );
 }
