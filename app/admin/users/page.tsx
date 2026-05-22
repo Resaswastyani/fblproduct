@@ -58,6 +58,7 @@ interface User {
   email: string;
   date: string;
   status: string;
+  role: string;
   products?: any[];
 }
 
@@ -73,6 +74,8 @@ export default function AdminUsersPage() {
     name: "",
     email: "",
     status: "Active",
+    role: "member",
+    password: "",
   });
   const [ebooks, setEbooks] = useState<any[]>([]);
   const [eas, setEas] = useState<any[]>([]);
@@ -135,7 +138,13 @@ export default function AdminUsersPage() {
       });
       if (res.ok) {
         setIsAddDialogOpen(false);
-        setFormData({ name: "", email: "", status: "Active" });
+        setFormData({
+          name: "",
+          email: "",
+          status: "Active",
+          role: "member",
+          password: "",
+        });
         setSelectedProducts([]);
         fetchUsers();
       }
@@ -147,10 +156,21 @@ export default function AdminUsersPage() {
   const handleEdit = async () => {
     if (!selectedUser) return;
     try {
+      const payload: any = {
+        name: formData.name,
+        email: formData.email,
+        status: formData.status,
+        role: formData.role,
+        products: selectedProducts,
+      };
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
       const res = await fetch(`/api/users/${selectedUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, products: selectedProducts }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setIsEditDialogOpen(false);
@@ -274,7 +294,6 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -291,7 +310,13 @@ export default function AdminUsersPage() {
         <Button
           className="bg-[#2962FF] hover:bg-[#2962FF]/90 text-white"
           onClick={() => {
-            setFormData({ name: "", email: "", status: "Active" });
+            setFormData({
+              name: "",
+              email: "",
+              status: "Active",
+              role: "member",
+              password: "",
+            });
             setSelectedProducts([]);
             setIsAddDialogOpen(true);
           }}
@@ -301,7 +326,6 @@ export default function AdminUsersPage() {
         </Button>
       </motion.div>
 
-      {/* Stats */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -328,7 +352,6 @@ export default function AdminUsersPage() {
         </div>
       </motion.div>
 
-      {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -359,7 +382,6 @@ export default function AdminUsersPage() {
         </div>
       </motion.div>
 
-      {/* Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -378,6 +400,7 @@ export default function AdminUsersPage() {
                   Join Date
                 </TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
+                <TableHead className="text-muted-foreground">Role</TableHead>
                 <TableHead className="text-muted-foreground">
                   Products
                 </TableHead>
@@ -422,6 +445,18 @@ export default function AdminUsersPage() {
                       }
                     >
                       {user.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        user.role === "admin"
+                          ? "border-[#F7C948] text-[#F7C948]"
+                          : "border-[#2962FF] text-[#2962FF]"
+                      }
+                    >
+                      {user.role === "admin" ? "Admin" : "Member"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -480,6 +515,8 @@ export default function AdminUsersPage() {
                               name: user.name,
                               email: user.email,
                               status: user.status,
+                              role: user.role || "member",
+                              password: "",
                             });
                             openProductDialog(user, true);
                             setIsEditDialogOpen(true);
@@ -548,12 +585,37 @@ export default function AdminUsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(v) => setFormData({ ...formData, role: v })}
+              >
+                <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="bg-[#1E2433] border-[#2A3142]"
+                placeholder="Enter password"
+              />
+            </div>
 
-            {/* Product Selection */}
             <div className="space-y-4 pt-4 border-t border-[#2A3142]">
               <h3 className="font-semibold text-foreground">Select Products</h3>
 
-              {/* Ebooks */}
               <div>
                 <h4 className="text-sm font-semibold text-[#EF4444] mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Ebooks
@@ -593,7 +655,6 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* EAs */}
               <div>
                 <h4 className="text-sm font-semibold text-[#F7C948] mb-2 flex items-center gap-2">
                   <Bot className="w-4 h-4" /> Expert Advisors
@@ -633,7 +694,6 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Indicators */}
               <div>
                 <h4 className="text-sm font-semibold text-[#00C853] mb-2 flex items-center gap-2">
                   <LineChart className="w-4 h-4" /> Indicators
@@ -736,12 +796,37 @@ export default function AdminUsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(v) => setFormData({ ...formData, role: v })}
+              >
+                <SelectTrigger className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1E2433] border-[#2A3142]">
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>New Password (optional)</Label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="bg-[#1E2433] border-[#2A3142]"
+                placeholder="Leave empty to keep current"
+              />
+            </div>
 
-            {/* Product Selection */}
             <div className="space-y-4 pt-4 border-t border-[#2A3142]">
               <h3 className="font-semibold text-foreground">Select Products</h3>
 
-              {/* Ebooks */}
               <div>
                 <h4 className="text-sm font-semibold text-[#EF4444] mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Ebooks
@@ -781,7 +866,6 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* EAs */}
               <div>
                 <h4 className="text-sm font-semibold text-[#F7C948] mb-2 flex items-center gap-2">
                   <Bot className="w-4 h-4" /> Expert Advisors
@@ -821,7 +905,6 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Indicators */}
               <div>
                 <h4 className="text-sm font-semibold text-[#00C853] mb-2 flex items-center gap-2">
                   <LineChart className="w-4 h-4" /> Indicators
@@ -888,7 +971,6 @@ export default function AdminUsersPage() {
             <DialogTitle>Assign Products to {selectedUser?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-4">
-            {/* Ebooks */}
             <div>
               <h3 className="text-sm font-semibold text-[#EF4444] mb-3 flex items-center gap-2">
                 <FileText className="w-4 h-4" /> Ebooks
@@ -928,7 +1010,6 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* EAs */}
             <div>
               <h3 className="text-sm font-semibold text-[#F7C948] mb-3 flex items-center gap-2">
                 <Bot className="w-4 h-4" /> Expert Advisors
@@ -968,7 +1049,6 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* Indicators */}
             <div>
               <h3 className="text-sm font-semibold text-[#00C853] mb-3 flex items-center gap-2">
                 <LineChart className="w-4 h-4" /> Indicators

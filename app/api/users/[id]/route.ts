@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -8,7 +9,7 @@ export async function GET(
   try {
     const users = await sql`
       SELECT 
-        u.*,
+        u.id, u.name, u.email, u.date, u.status, u.role,
         COALESCE(
           json_agg(
             json_build_object(
@@ -40,21 +41,34 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { name, email, status, products } = body;
+    const { name, email, status, role, password, products } = body;
 
-    // Update user
+    const current = await sql`SELECT * FROM users WHERE id = ${params.id}`;
+    if (current.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const updatedName = name !== undefined ? name : current[0].name;
+    const updatedEmail = email !== undefined ? email : current[0].email;
+    const updatedStatus = status !== undefined ? status : current[0].status;
+    const updatedRole = role !== undefined ? role : current[0].role;
+    const updatedPassword = password
+      ? hashPassword(password)
+      : current[0].password;
+
     const result = await sql`
       UPDATE users 
       SET 
-        name = COALESCE(${name}, name),
-        email = COALESCE(${email}, email),
-        status = COALESCE(${status}, status),
+        name = ${updatedName},
+        email = ${updatedEmail},
+        status = ${updatedStatus},
+        role = ${updatedRole},
+        password = ${updatedPassword},
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.id}
-      RETURNING *
+      RETURNING id, name, email, date, status, role
     `;
 
-    // Update products kalau ada
     if (products && Array.isArray(products)) {
       await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
       for (const product of products) {

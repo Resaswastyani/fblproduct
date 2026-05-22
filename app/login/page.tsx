@@ -1,76 +1,97 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { Eye, EyeOff, Mail, Lock, ChevronRight, Shield, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ChevronRight,
+  Shield,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const demoAccounts = [
-  { 
-    type: "member", 
-    email: "member@demo.com", 
+  {
+    type: "member",
+    email: "member@demo.com",
     password: "member123",
     label: "Member Demo",
     icon: User,
-    redirect: "/dashboard"
+    redirect: "/dashboard",
   },
-  { 
-    type: "admin", 
-    email: "admin@demo.com", 
+  {
+    type: "admin",
+    email: "admin@demo.com",
     password: "admin123",
     label: "Admin Demo",
     icon: Shield,
-    redirect: "/admin"
+    redirect: "/admin",
   },
-]
+];
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleDemoLogin = (account: typeof demoAccounts[0]) => {
-    setEmail(account.email)
-    setPassword(account.password)
-  }
+  const handleDemoLogin = (account: (typeof demoAccounts)[0]) => {
+    setEmail(account.email);
+    setPassword(account.password);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-    
-    // Check demo accounts
-    const demoAccount = demoAccounts.find(
-      acc => acc.email === email && acc.password === password
-    )
-    
-    setTimeout(() => {
-      setIsLoading(false)
-      if (demoAccount) {
-        router.push(demoAccount.redirect)
-      } else if (email && password) {
-        // For any other credentials, redirect to member dashboard
-        router.push("/dashboard")
-      } else {
-        setError("Please enter email and password")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter email and password");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      setIsLoading(false);
+
+      if (!res.ok) {
+        setError(data.error || "Invalid email or password");
+        return;
       }
-    }, 1000)
-  }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      if (data.user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setError("Network error. Please try again.");
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-8">
-      {/* Background */}
       <div className="absolute inset-0 candlestick-bg" />
-      
-      {/* Gradient Orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2962FF]/20 rounded-full blur-[120px]" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#F7C948]/10 rounded-full blur-[120px]" />
 
@@ -79,7 +100,6 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-md"
       >
-        {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="w-12 h-12 rounded-xl gradient-gold flex items-center justify-center">
             <span className="text-[#0B0F19] font-bold text-xl">TV</span>
@@ -89,7 +109,6 @@ export default function LoginPage() {
           </span>
         </Link>
 
-        {/* Card */}
         <div className="glass-card rounded-2xl p-6 sm:p-8 glow-blue">
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
@@ -101,9 +120,10 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Demo Accounts */}
             <div className="space-y-2 mb-4">
-              <Label className="text-muted-foreground text-sm">Quick Demo Login</Label>
+              <Label className="text-muted-foreground text-sm">
+                Quick Demo Login
+              </Label>
               <div className="grid grid-cols-2 gap-2">
                 {demoAccounts.map((account) => (
                   <button
@@ -111,30 +131,36 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => handleDemoLogin(account)}
                     className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
-                      email === account.email 
-                        ? "border-[#F7C948] bg-[#F7C948]/10" 
+                      email === account.email
+                        ? "border-[#F7C948] bg-[#F7C948]/10"
                         : "border-[#2A3142] bg-[#1E2433] hover:border-[#3A4152]"
                     }`}
                   >
-                    <account.icon className={`w-4 h-4 ${
-                      account.type === "admin" ? "text-[#EF4444]" : "text-[#2962FF]"
-                    }`} />
-                    <span className="text-sm text-foreground">{account.label}</span>
+                    <account.icon
+                      className={`w-4 h-4 ${
+                        account.type === "admin"
+                          ? "text-[#EF4444]"
+                          : "text-[#2962FF]"
+                      }`}
+                    />
+                    <span className="text-sm text-foreground">
+                      {account.label}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-3 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] text-sm">
                 {error}
               </div>
             )}
 
-            {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email</Label>
+              <Label htmlFor="email" className="text-foreground">
+                Email
+              </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -149,9 +175,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">Password</Label>
+              <Label htmlFor="password" className="text-foreground">
+                Password
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -168,25 +195,36 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Checkbox id="remember" className="border-[#2A3142] data-[state=checked]:bg-[#2962FF] data-[state=checked]:border-[#2962FF]" />
-                <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+                <Checkbox
+                  id="remember"
+                  className="border-[#2A3142] data-[state=checked]:bg-[#2962FF] data-[state=checked]:border-[#2962FF]"
+                />
+                <Label
+                  htmlFor="remember"
+                  className="text-sm text-muted-foreground cursor-pointer"
+                >
                   Remember Me
                 </Label>
               </div>
-              <Link href="/forgot-password" className="text-sm text-[#2962FF] hover:underline">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-[#2962FF] hover:underline"
+              >
                 Forgot Password?
               </Link>
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               disabled={isLoading}
@@ -203,24 +241,28 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-muted-foreground">
               Belum punya akun?{" "}
-              <Link href="/register" className="text-[#F7C948] font-semibold hover:underline">
+              <Link
+                href="/register"
+                className="text-[#F7C948] font-semibold hover:underline"
+              >
                 Register Here
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-muted-foreground hover:text-foreground text-sm">
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground text-sm"
+          >
             Back to Home
           </Link>
         </div>
       </motion.div>
     </main>
-  )
+  );
 }

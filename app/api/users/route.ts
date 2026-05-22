@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
 
 export async function GET() {
   try {
     const users = await sql`
       SELECT 
-        u.*,
+        u.id, u.name, u.email, u.date, u.status, u.role,
         COALESCE(
           json_agg(
             json_build_object(
@@ -30,18 +31,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, status, products } = body;
+    const { name, email, status, role, password, products } = body;
 
-    // Insert user
+    if (!name || !email || !password) {
+      return NextResponse.json(
+        { error: "Name, email, and password required" },
+        { status: 400 },
+      );
+    }
+
+    const hashedPassword = hashPassword(password);
+
     const result = await sql`
-      INSERT INTO users (name, email, status)
-      VALUES (${name}, ${email}, ${status || "Active"})
-      RETURNING *
+      INSERT INTO users (name, email, password, role, status)
+      VALUES (${name}, ${email}, ${hashedPassword}, ${role || "member"}, ${status || "Active"})
+      RETURNING id, name, email, date, status, role
     `;
 
     const userId = result[0].id;
 
-    // Insert products kalau ada
     if (products && Array.isArray(products)) {
       for (const product of products) {
         await sql`
