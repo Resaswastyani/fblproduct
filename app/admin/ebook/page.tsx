@@ -48,7 +48,7 @@ interface Ebook {
   downloads: number;
   status: string;
   file_url?: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export default function AdminEbookPage() {
@@ -56,6 +56,7 @@ export default function AdminEbookPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedEbook, setSelectedEbook] = useState<Ebook | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -82,7 +83,7 @@ export default function AdminEbookPage() {
         Array.isArray(data)
           ? data.map((e: any) => ({
               ...e,
-              createdAt: e.created_at?.split("T")[0] || e.createdAt,
+              created_at: e.created_at?.split("T")[0] || e.created_at,
             }))
           : [],
       );
@@ -153,6 +154,10 @@ export default function AdminEbookPage() {
         setIsEditDialogOpen(false);
         setSelectedEbook(null);
         fetchEbooks();
+      } else {
+        const error = await res.json();
+        console.error("Edit failed:", error);
+        alert("Failed to update: " + (error.error || "Unknown error"));
       }
     } catch (error) {
       console.error("Failed to edit ebook:", error);
@@ -163,10 +168,60 @@ export default function AdminEbookPage() {
     if (!confirm("Are you sure?")) return;
     try {
       const res = await fetch(`/api/ebooks/${id}`, { method: "DELETE" });
-      if (res.ok) fetchEbooks();
+      if (res.ok) {
+        fetchEbooks();
+      } else {
+        const error = await res.json();
+        console.error("Delete failed:", error);
+        alert("Failed to delete: " + (error.error || "Unknown error"));
+      }
     } catch (error) {
       console.error("Failed to delete ebook:", error);
     }
+  };
+
+  const handleView = (ebook: Ebook) => {
+    setSelectedEbook(ebook);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleDownload = async (ebook: Ebook) => {
+    if (!ebook.file_url) {
+      alert("No PDF file available for this ebook");
+      return;
+    }
+
+    // Increment download count
+    try {
+      await fetch(`/api/ebooks/${ebook.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ downloads: ebook.downloads + 1 }),
+      });
+      fetchEbooks();
+    } catch (error) {
+      console.error("Failed to update download count:", error);
+    }
+
+    // Create hidden anchor for download (avoids popup blocker)
+    const link = document.createElement("a");
+    link.href = ebook.file_url;
+    link.download = `${ebook.title}.pdf`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleViewPdf = (ebook: Ebook) => {
+    if (!ebook.file_url) {
+      alert("No PDF file available");
+      return;
+    }
+    // Open in same tab with Google Docs viewer or direct embed to avoid popup blocker
+    const viewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(ebook.file_url)}`;
+    window.location.href = viewerUrl;
   };
 
   const filteredEbooks = ebooks.filter((ebook) =>
@@ -434,12 +489,18 @@ export default function AdminEbookPage() {
                         align="end"
                         className="bg-[#1E2433] border-[#2A3142]"
                       >
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => handleView(ebook)}
+                        >
                           <Eye className="w-4 h-4 mr-2" />
                           View
                         </DropdownMenuItem>
                         {ebook.file_url && (
-                          <DropdownMenuItem className="cursor-pointer">
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => handleDownload(ebook)}
+                          >
                             <Download className="w-4 h-4 mr-2" />
                             Download PDF
                           </DropdownMenuItem>
@@ -607,6 +668,83 @@ export default function AdminEbookPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ebook Details</DialogTitle>
+          </DialogHeader>
+          {selectedEbook && (
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-[#EF4444]/10 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-[#EF4444]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {selectedEbook.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedEbook.category}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#1E2433] rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Pages</p>
+                  <p className="text-lg font-semibold">{selectedEbook.pages}</p>
+                </div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Downloads</p>
+                  <p className="text-lg font-semibold">
+                    {selectedEbook.downloads.toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <span
+                    className={`text-sm font-medium ${
+                      selectedEbook.status === "published"
+                        ? "text-[#10B981]"
+                        : "text-[#F7C948]"
+                    }`}
+                  >
+                    {selectedEbook.status}
+                  </span>
+                </div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Created</p>
+                  <p className="text-sm font-medium">
+                    {selectedEbook.created_at}
+                  </p>
+                </div>
+              </div>
+
+              {selectedEbook.file_url && (
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                    onClick={() => handleDownload(selectedEbook)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-[#2A3142]"
+                    onClick={() => handleViewPdf(selectedEbook)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View PDF
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
