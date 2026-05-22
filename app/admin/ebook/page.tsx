@@ -185,43 +185,29 @@ export default function AdminEbookPage() {
     setIsViewDialogOpen(true);
   };
 
-  const handleDownload = async (ebook: Ebook) => {
+  const handleDownload = (ebook: Ebook) => {
     if (!ebook.file_url) {
       alert("No PDF file available for this ebook");
       return;
     }
 
-    // Increment download count
-    try {
-      await fetch(`/api/ebooks/${ebook.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ downloads: ebook.downloads + 1 }),
-      });
-      fetchEbooks();
-    } catch (error) {
-      console.error("Failed to update download count:", error);
-    }
+    // Update download count in background (fire and forget)
+    fetch(`/api/ebooks/${ebook.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ downloads: ebook.downloads + 1 }),
+    })
+      .then(() => fetchEbooks())
+      .catch(console.error);
 
-    // Create hidden anchor for download (avoids popup blocker)
+    // Trigger download via hidden anchor (synchronous, no popup blocker)
     const link = document.createElement("a");
     link.href = ebook.file_url;
-    link.download = `${ebook.title}.pdf`;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
+    link.download = `${ebook.title.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleViewPdf = (ebook: Ebook) => {
-    if (!ebook.file_url) {
-      alert("No PDF file available");
-      return;
-    }
-    // Open in same tab with Google Docs viewer or direct embed to avoid popup blocker
-    const viewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(ebook.file_url)}`;
-    window.location.href = viewerUrl;
   };
 
   const filteredEbooks = ebooks.filter((ebook) =>
@@ -671,9 +657,9 @@ export default function AdminEbookPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog */}
+      {/* View Dialog - dengan iframe PDF embed */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-lg">
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ebook Details</DialogTitle>
           </DialogHeader>
@@ -693,7 +679,7 @@ export default function AdminEbookPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-[#1E2433] rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Pages</p>
                   <p className="text-lg font-semibold">{selectedEbook.pages}</p>
@@ -725,23 +711,32 @@ export default function AdminEbookPage() {
               </div>
 
               {selectedEbook.file_url && (
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
-                    onClick={() => handleDownload(selectedEbook)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-[#2A3142]"
-                    onClick={() => handleViewPdf(selectedEbook)}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View PDF
-                  </Button>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                      onClick={() => handleDownload(selectedEbook)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  </div>
+
+                  {/* PDF Viewer Iframe - tidak ke-blok karena embed di halaman */}
+                  <div className="border border-[#2A3142] rounded-xl overflow-hidden bg-[#1E2433]">
+                    <div className="bg-[#0D1117] px-4 py-2 border-b border-[#2A3142] flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        PDF Preview
+                      </span>
+                      <span className="text-xs text-[#10B981]">PDF ready</span>
+                    </div>
+                    <iframe
+                      src={`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(selectedEbook.file_url)}`}
+                      className="w-full h-[500px]"
+                      title="PDF Viewer"
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}
