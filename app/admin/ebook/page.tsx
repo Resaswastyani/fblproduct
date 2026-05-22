@@ -656,35 +656,42 @@ export default function AdminEbookPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog - dengan PDF embed yang lebih robust */}
+      {/* View Dialog - Tanpa iframe, hanya info + link buttons */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="bg-[#0D1117] border-[#2A3142] text-foreground max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ebook Details</DialogTitle>
+          </DialogHeader>
           {selectedEbook && (
-            <div className="space-y-0">
-              {/* Header */}
-              <div className="flex items-center gap-4 p-6 border-b border-[#2A3142]">
-                <div className="w-14 h-14 rounded-xl bg-[#EF4444]/10 flex items-center justify-center shrink-0">
-                  <FileText className="w-7 h-7 text-[#EF4444]" />
+            <div className="space-y-5 pt-4">
+              {/* Header Card */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-[#EF4444]/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-8 h-8 text-[#EF4444]" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-semibold truncate">
                     {selectedEbook.title}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedEbook.category} • {selectedEbook.pages} pages
+                    {selectedEbook.category}
                   </p>
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 p-6 border-b border-[#2A3142]">
-                <div>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#1E2433] rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Pages</p>
+                  <p className="text-lg font-semibold">{selectedEbook.pages}</p>
+                </div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Downloads</p>
                   <p className="text-lg font-semibold">
                     {selectedEbook.downloads.toLocaleString()}
                   </p>
                 </div>
-                <div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Status</p>
                   <span
                     className={`text-sm font-medium ${
@@ -696,7 +703,7 @@ export default function AdminEbookPage() {
                     {selectedEbook.status}
                   </span>
                 </div>
-                <div>
+                <div className="bg-[#1E2433] rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Created</p>
                   <p className="text-sm font-medium">
                     {selectedEbook.created_at}
@@ -704,52 +711,54 @@ export default function AdminEbookPage() {
                 </div>
               </div>
 
-              {/* Actions */}
-              {selectedEbook.file_url && (
-                <div className="flex gap-2 p-6 border-b border-[#2A3142]">
-                  <Button
-                    className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
-                    onClick={() => handleDownload(selectedEbook)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-[#2A3142]"
-                    onClick={() => {
-                      const viewer = document.getElementById(
-                        "pdf-viewer",
-                      ) as HTMLIFrameElement;
-                      if (viewer) {
-                        viewer.src = viewer.src;
-                      }
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Refresh Viewer
-                  </Button>
-                </div>
-              )}
+              {/* PDF Actions */}
+              {selectedEbook.file_url ? (
+                <div className="space-y-3">
+                  <div className="bg-[#1E2433] rounded-lg p-3 flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-[#10B981] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {selectedEbook.title}.pdf
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        PDF file available
+                      </p>
+                    </div>
+                  </div>
 
-              {/* PDF Viewer - Multiple fallback methods */}
-              {selectedEbook.file_url && (
-                <div className="border-t border-[#2A3142]">
-                  {/* Method 1: Direct iframe (works if CORS allows) */}
-                  <iframe
-                    id="pdf-viewer"
-                    src={selectedEbook.file_url}
-                    className="w-full h-[600px] bg-[#1E2433]"
-                    title="PDF Viewer"
-                    sandbox="allow-scripts allow-same-origin"
-                  />
-                </div>
-              )}
+                  <div className="flex gap-2">
+                    {/* Open PDF - native anchor, tidak ke-blok */}
+                    <a
+                      href={selectedEbook.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1"
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full border-[#2A3142] hover:bg-[#1E2433]"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open PDF
+                      </Button>
+                    </a>
 
-              {!selectedEbook.file_url && (
-                <div className="p-8 text-center text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No PDF file uploaded for this ebook</p>
+                    {/* Download PDF */}
+                    <Button
+                      className="flex-1 bg-[#EF4444] hover:bg-[#DC2626]"
+                      onClick={() => handleDownload(selectedEbook)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#1E2433]/50 rounded-lg p-6 text-center">
+                  <FileText className="w-10 h-10 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    No PDF file uploaded
+                  </p>
                 </div>
               )}
             </div>
