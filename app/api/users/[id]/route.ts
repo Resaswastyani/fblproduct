@@ -69,6 +69,7 @@ export async function PUT(
       RETURNING id, name, email, date, status, role
     `;
 
+    // FIX: Update products kalau ada di body
     if (products && Array.isArray(products)) {
       await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
       for (const product of products) {

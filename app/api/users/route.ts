@@ -21,7 +21,14 @@ export async function GET() {
       GROUP BY u.id
       ORDER BY u.id DESC
     `;
-    return NextResponse.json(users);
+
+    // FIX: Pastikan products selalu array
+    const normalized = users.map((u: any) => ({
+      ...u,
+      products: Array.isArray(u.products) ? u.products : [],
+    }));
+
+    return NextResponse.json(normalized);
   } catch (error: any) {
     console.error("API Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

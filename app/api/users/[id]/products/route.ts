@@ -48,13 +48,15 @@ export async function POST(
       );
     }
 
+    // FIX: Hapus SEMUA produk user ini dulu, lalu insert yang baru
+    // Pastikan hanya hapus milik user_id ini!
     await sql`DELETE FROM user_products WHERE user_id = ${params.id}`;
 
+    // Insert produk baru yang dipilih
     for (const product of products) {
       await sql`
         INSERT INTO user_products (user_id, product_type, product_id)
         VALUES (${params.id}, ${product.type}, ${product.id})
-        ON CONFLICT (user_id, product_type, product_id) DO NOTHING
       `;
     }
 

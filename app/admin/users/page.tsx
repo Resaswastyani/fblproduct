@@ -138,15 +138,11 @@ export default function AdminUsersPage() {
       });
       if (res.ok) {
         setIsAddDialogOpen(false);
-        setFormData({
-          name: "",
-          email: "",
-          status: "Active",
-          role: "member",
-          password: "",
-        });
-        setSelectedProducts([]);
+        resetForm();
         fetchUsers();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to add user");
       }
     } catch (error) {
       console.error("Failed to add user:", error);
@@ -172,11 +168,15 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       if (res.ok) {
         setIsEditDialogOpen(false);
         setSelectedUser(null);
         setSelectedProducts([]);
         fetchUsers();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update user");
       }
     } catch (error) {
       console.error("Failed to edit user:", error);
@@ -193,11 +193,31 @@ export default function AdminUsersPage() {
     }
   };
 
-  const openProductDialog = async (user: User, isEdit: boolean = false) => {
+  // FIX: Buka dialog assign products (standalone)
+  const openAssignDialog = async (user: User) => {
     setSelectedUser(user);
     setIsProductDialogOpen(true);
+    await loadUserProducts(user.id);
+  };
+
+  // FIX: Buka dialog edit user + load products
+  const openEditDialog = async (user: User) => {
+    setSelectedUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      status: user.status,
+      role: user.role || "member",
+      password: "",
+    });
+    await loadUserProducts(user.id);
+    setIsEditDialogOpen(true);
+  };
+
+  // FIX: Load products untuk user tertentu
+  const loadUserProducts = async (userId: number) => {
     try {
-      const res = await fetch(`/api/users/${user.id}/products`);
+      const res = await fetch(`/api/users/${userId}/products`);
       const data = await res.json();
       const currentProducts: { type: string; id: number }[] = [];
       data.ebooks?.forEach((e: any) =>
@@ -226,7 +246,12 @@ export default function AdminUsersPage() {
       });
       if (res.ok) {
         setIsProductDialogOpen(false);
+        setSelectedUser(null);
+        setSelectedProducts([]);
         fetchUsers();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to assign products");
       }
     } catch (error) {
       console.error("Failed to assign products:", error);
@@ -258,6 +283,17 @@ export default function AdminUsersPage() {
       default:
         return null;
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      status: "Active",
+      role: "member",
+      password: "",
+    });
+    setSelectedProducts([]);
   };
 
   const filteredUsers = users.filter((user) => {
@@ -310,14 +346,7 @@ export default function AdminUsersPage() {
         <Button
           className="bg-[#2962FF] hover:bg-[#2962FF]/90 text-white"
           onClick={() => {
-            setFormData({
-              name: "",
-              email: "",
-              status: "Active",
-              role: "member",
-              password: "",
-            });
-            setSelectedProducts([]);
+            resetForm();
             setIsAddDialogOpen(true);
           }}
         >
@@ -498,7 +527,7 @@ export default function AdminUsersPage() {
                       >
                         <DropdownMenuItem
                           className="text-foreground hover:bg-[#1E2433]"
-                          onClick={() => openProductDialog(user, true)}
+                          onClick={() => openAssignDialog(user)}
                         >
                           <Shield className="w-4 h-4 mr-2" />
                           Assign Products
@@ -509,18 +538,7 @@ export default function AdminUsersPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-foreground hover:bg-[#1E2433]"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setFormData({
-                              name: user.name,
-                              email: user.email,
-                              status: user.status,
-                              role: user.role || "member",
-                              password: "",
-                            });
-                            openProductDialog(user, true);
-                            setIsEditDialogOpen(true);
-                          }}
+                          onClick={() => openEditDialog(user)}
                         >
                           <Pencil className="w-4 h-4 mr-2" />
                           Edit User
@@ -1092,7 +1110,11 @@ export default function AdminUsersPage() {
               <Button
                 variant="outline"
                 className="flex-1 border-[#2A3142]"
-                onClick={() => setIsProductDialogOpen(false)}
+                onClick={() => {
+                  setIsProductDialogOpen(false);
+                  setSelectedUser(null);
+                  setSelectedProducts([]);
+                }}
               >
                 <X className="w-4 h-4 mr-2" /> Cancel
               </Button>
