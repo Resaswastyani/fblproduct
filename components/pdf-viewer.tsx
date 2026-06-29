@@ -106,7 +106,12 @@ export default function PdfViewer({ url }: PdfViewerProps) {
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center gap-4 py-4 bg-[#0D1117]"
-        style={{ scrollBehavior: "smooth" }}
+        style={{ 
+          scrollBehavior: "smooth",
+          WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain",
+          touchAction: "pan-y",
+        }}
       >
         <Document
           file={url}

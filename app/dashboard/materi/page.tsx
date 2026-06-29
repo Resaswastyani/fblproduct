@@ -285,7 +285,7 @@ export default function MateriPage() {
             <div className="flex-1 w-full flex flex-col min-h-0">
               {selectedProduct.file_url ? (
                 selectedProduct.type === 'ebook' ? (
-                  <div className="flex-1 w-full h-full relative z-10">
+                  <div className="flex-1 w-full overflow-hidden" style={{ minHeight: 0 }}>
                      <PdfViewer url={selectedProduct.file_url} />
                   </div>
                 ) : (
