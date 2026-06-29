@@ -17,7 +17,10 @@ export default function PdfViewer({ url }: PdfViewerProps) {
   const [scale, setScale] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  // Initialize directly from matchMedia so first render is already correct on iOS
+  const [isMobile, setIsMobile] = useState<boolean>(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
