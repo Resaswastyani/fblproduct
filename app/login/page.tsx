@@ -90,34 +90,51 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-8">
-      <div className="absolute inset-0 candlestick-bg" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2962FF]/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#F7C948]/10 rounded-full blur-[120px]" />
+      <div className="absolute inset-0 candlestick-bg opacity-30" />
+      <motion.div
+        animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+        transition={{ repeat: Infinity, duration: 8 }}
+        className="absolute top-1/4 left-1/4 w-[30rem] h-[30rem] bg-[#E91E63]/20 rounded-full blur-[120px]"
+      />
+      <motion.div
+        animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+        transition={{ repeat: Infinity, duration: 10, delay: 2 }}
+        className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-[#00BCD4]/20 rounded-full blur-[120px]"
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-md"
       >
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-xl gradient-gold flex items-center justify-center overflow-hidden p-1">
-            {logoUrl ? (
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            className="flex flex-col items-center justify-center gap-4 mb-8"
+          >
+            <div className="relative w-48 h-20">
               <img
-                src={logoUrl}
-                alt="Logo"
-                className="w-full h-full object-contain"
+                src="/logo-fbl.png"
+                alt="Forex For Better Living Logo"
+                className="w-full h-full object-contain drop-shadow-2xl"
               />
-            ) : (
-              <span className="text-[#0B0F19] font-bold text-xl">FBL</span>
-            )}
-          </div>
-          <span className="text-2xl font-bold text-foreground">
-            {siteName} <span className="text-[#F7C948]">Pro</span>
-          </span>
-        </Link>
+            </div>
+          </motion.div>
 
-        <div className="glass-card rounded-2xl p-6 sm:p-8 glow-blue">
-          <div className="text-center mb-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+          {/* Animated decorative glow inside card */}
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+            className="absolute -top-20 -right-20 w-40 h-40 bg-[#E91E63]/20 rounded-full blur-[60px]"
+          />
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ repeat: Infinity, duration: 5, delay: 1 }}
+            className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#00BCD4]/20 rounded-full blur-[60px]"
+          />
+
+          <div className="text-center mb-8 relative z-10">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               WELCOME BACK
             </h1>
