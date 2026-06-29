@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,22 +48,6 @@ const mobileNavLinks = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [siteName, setSiteName] = useState("Forex For Better Living");
-
-  // Load custom logo & site name from admin settings
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("admin_settings");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.logo) setLogoUrl(parsed.logo);
-        if (parsed.siteName) setSiteName(parsed.siteName);
-      }
-    } catch {
-      // ignore parse error
-    }
-  }, []);
 
   return (
     <>
@@ -71,57 +55,12 @@ export function DashboardSidebar() {
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-sidebar-border">
         {/* Logo */}
         <div className="p-5 border-b border-sidebar-border">
-          <Link href="/dashboard" className="flex items-center gap-3 group">
-            {/* Animated Logo Icon */}
-            <div className="relative flex-shrink-0">
-              {/* Pulsing outer glow */}
-              <motion.div
-                animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.7, 0.4] }}
-                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#F7C948]/40 via-[#E91E63]/30 to-[#2962FF]/40 blur-md"
-              />
-              {/* Spinning colour ring */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-                className="absolute -inset-1 rounded-xl bg-gradient-to-br from-[#F7C948] via-[#E91E63] to-[#2962FF] opacity-60"
-                style={{ padding: 2 }}
-              />
-              {/* Logo box */}
-              <div className="relative w-11 h-11 rounded-xl bg-[#0B0F19] flex items-center justify-center overflow-hidden z-10 border border-white/10">
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt="Logo"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <span className="font-extrabold text-base bg-gradient-to-br from-[#F7C948] via-[#E91E63] to-[#2962FF] bg-clip-text text-transparent leading-none">
-                    FBL
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Site name with animated gradient underline */}
-            <div className="flex flex-col leading-tight">
-              <span className="text-base font-extrabold text-sidebar-foreground tracking-tight group-hover:text-white transition-colors">
-                {siteName}
-              </span>
-              <motion.span
-                animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="text-xs font-bold tracking-widest uppercase"
-                style={{
-                  background: "linear-gradient(90deg, #F7C948, #E91E63, #2962FF, #F7C948)",
-                  backgroundSize: "200% auto",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Pro
-              </motion.span>
-            </div>
+          <Link href="/dashboard" className="flex items-center justify-center group">
+            <img
+              src="/logo-fbl.png"
+              alt="Forex For Better Living"
+              className="h-14 w-auto object-contain transition-opacity group-hover:opacity-80"
+            />
           </Link>
         </div>
 
@@ -166,47 +105,12 @@ export function DashboardSidebar() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="flex items-center gap-2 group">
-            {/* Animated Mobile Logo */}
-            <div className="relative flex-shrink-0">
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#F7C948]/50 via-[#E91E63]/30 to-[#2962FF]/50 blur-sm"
-              />
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-                className="absolute -inset-0.5 rounded-lg bg-gradient-to-br from-[#F7C948] via-[#E91E63] to-[#2962FF] opacity-70"
-              />
-              <div className="relative w-9 h-9 rounded-lg bg-[#0B0F19] flex items-center justify-center z-10 border border-white/10">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                ) : (
-                  <span className="font-extrabold text-sm bg-gradient-to-br from-[#F7C948] via-[#E91E63] to-[#2962FF] bg-clip-text text-transparent">
-                    FBL
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-base font-extrabold text-foreground tracking-tight">
-                {siteName}
-              </span>
-              <motion.span
-                animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="text-[10px] font-bold tracking-widest uppercase"
-                style={{
-                  background: "linear-gradient(90deg, #F7C948, #E91E63, #2962FF, #F7C948)",
-                  backgroundSize: "200% auto",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Pro
-              </motion.span>
-            </div>
+          <Link href="/dashboard" className="flex items-center group">
+            <img
+              src="/logo-fbl.png"
+              alt="Forex For Better Living"
+              className="h-10 w-auto object-contain transition-opacity group-hover:opacity-80"
+            />
           </Link>
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
