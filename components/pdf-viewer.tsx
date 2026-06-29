@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Configure worker for PDF.js using an external CDN
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PdfViewerProps {
@@ -18,10 +17,19 @@ export default function PdfViewer({ url }: PdfViewerProps) {
   const [scale, setScale] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Track container width with ResizeObserver
+  // Detect mobile vs desktop
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Track container width
   useEffect(() => {
     const updateWidth = () => {
       if (containerRef.current) {
@@ -34,21 +42,19 @@ export default function PdfViewer({ url }: PdfViewerProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Calculate which page is currently most visible using scroll position
+  // Desktop: scroll-based page tracking
   const handleScroll = useCallback(() => {
+    if (isMobile) return;
     const container = containerRef.current;
     if (!container || pageRefs.current.length === 0) return;
 
-    const containerTop = container.scrollTop;
-    const containerMid = containerTop + container.clientHeight / 2;
-
+    const containerMid = container.scrollTop + container.clientHeight / 2;
     let closestPage = 1;
     let closestDistance = Infinity;
 
     pageRefs.current.forEach((el, i) => {
       if (!el) return;
-      const elTop = el.offsetTop;
-      const elMid = elTop + el.offsetHeight / 2;
+      const elMid = el.offsetTop + el.offsetHeight / 2;
       const distance = Math.abs(containerMid - elMid);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -57,52 +63,46 @@ export default function PdfViewer({ url }: PdfViewerProps) {
     });
 
     setCurrentPage(closestPage);
-  }, []);
+  }, [isMobile]);
 
-  // Attach scroll listener
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || isMobile) return;
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [handleScroll, numPages]);
+  }, [handleScroll, isMobile, numPages]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
     setCurrentPage(1);
     pageRefs.current = new Array(numPages).fill(null);
-    // Reset scroll to top when document loads
-    if (containerRef.current) {
-      containerRef.current.scrollTop = 0;
-    }
+    if (containerRef.current) containerRef.current.scrollTop = 0;
   }
 
   const pageWidth = containerWidth > 0 ? containerWidth * scale : undefined;
 
+  const goToPrev = () => setCurrentPage(p => Math.max(1, p - 1));
+  const goToNext = () => setCurrentPage(p => Math.min(numPages, p + 1));
+
   return (
     <div className="flex flex-col w-full h-full bg-[#0D1117] overflow-hidden">
 
-      {/* Sticky Toolbar */}
+      {/* Toolbar */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[#161B22] border-b border-[#2A3142]">
-        {/* Page indicator */}
         <span className="text-sm font-medium text-white/70 tabular-nums">
           Halaman <span className="text-white font-bold">{currentPage}</span> / {numPages || "—"}
         </span>
-
-        {/* Zoom Controls */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => setScale(prev => Math.max(0.5, parseFloat((prev - 0.1).toFixed(1))))}
             disabled={scale <= 0.5}
             className="p-1.5 rounded-lg hover:bg-[#2A3142] disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
-            title="Perkecil"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={() => setScale(1)}
             className="px-2 py-1 text-xs font-mono font-semibold text-white/70 hover:text-white hover:bg-[#2A3142] rounded-lg transition-colors min-w-[46px] text-center"
-            title="Reset zoom"
           >
             {Math.round(scale * 100)}%
           </button>
@@ -110,70 +110,123 @@ export default function PdfViewer({ url }: PdfViewerProps) {
             onClick={() => setScale(prev => Math.min(3, parseFloat((prev + 0.1).toFixed(1))))}
             disabled={scale >= 3}
             className="p-1.5 rounded-lg hover:bg-[#2A3142] disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
-            title="Perbesar"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Scrollable PDF Content — all pages rendered, scroll to read */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center gap-4 py-4 bg-[#0D1117]"
-        style={{ 
-          scrollBehavior: "smooth",
-          WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain",
-          touchAction: "pan-y",
-        }}
-      >
-        <Document
-          file={url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={
-            <div className="flex flex-col items-center justify-center pt-24 gap-4">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-white/50 font-medium">Memuat PDF...</p>
-            </div>
-          }
-          error={
-            <div className="mt-24 mx-4 p-6 text-center text-red-400 bg-red-950/30 border border-red-800 rounded-xl">
-              <p className="font-semibold mb-1">Gagal memuat PDF</p>
-              <p className="text-sm text-red-400/70">Format tidak didukung atau link sudah kadaluarsa.</p>
-            </div>
-          }
-        >
-          {/* Render ALL pages one by one so user can scroll */}
-          {numPages > 0 &&
-            Array.from({ length: numPages }, (_, i) => (
-              <div
-                key={i}
-                ref={(el) => { pageRefs.current[i] = el; }}
-                className="w-full flex justify-center"
-              >
-                <Page
-                  pageNumber={i + 1}
-                  width={pageWidth}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  className="shadow-2xl rounded-md overflow-hidden bg-white"
-                  loading={
-                    <div
-                      className="bg-[#1E2433] rounded-md animate-pulse"
-                      style={{ width: pageWidth, height: (pageWidth ?? 400) * 1.414 }}
-                    />
-                  }
-                />
-              </div>
-            ))
-          }
-        </Document>
+      {/* ── MOBILE: single page + prev/next buttons ── */}
+      {isMobile ? (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Single page viewer */}
+          <div className="flex-1 overflow-y-auto flex justify-center items-start py-4 bg-[#0D1117]"
+            style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          >
+            <Document
+              file={url}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className="flex flex-col items-center pt-24 gap-4">
+                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-white/50">Memuat PDF...</p>
+                </div>
+              }
+              error={
+                <div className="mt-12 mx-4 p-6 text-center text-red-400 bg-red-950/30 border border-red-800 rounded-xl">
+                  Gagal memuat PDF.
+                </div>
+              }
+            >
+              <Page
+                pageNumber={currentPage}
+                width={containerWidth > 0 ? containerWidth - 16 : undefined}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="shadow-2xl rounded-md overflow-hidden bg-white"
+                loading={
+                  <div
+                    className="bg-[#1E2433] rounded-md animate-pulse mx-2"
+                    style={{ width: (containerWidth || 300) - 16, height: ((containerWidth || 300) - 16) * 1.414 }}
+                  />
+                }
+              />
+            </Document>
+          </div>
 
-        {numPages > 0 && (
-          <p className="text-xs text-white/30 pb-4">— Akhir Dokumen —</p>
-        )}
-      </div>
+          {/* Mobile bottom nav */}
+          <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 bg-[#161B22] border-t border-[#2A3142]">
+            <button
+              onClick={goToPrev}
+              disabled={currentPage <= 1}
+              className="flex-1 py-2.5 rounded-xl bg-[#2A3142] hover:bg-[#3A4152] active:bg-[#4A5162] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              <ChevronLeft className="w-4 h-4" /> Sebelumnya
+            </button>
+            <span className="text-xs text-white/50 tabular-nums shrink-0 font-medium">
+              {currentPage}/{numPages || "—"}
+            </span>
+            <button
+              onClick={goToNext}
+              disabled={currentPage >= numPages}
+              className="flex-1 py-2.5 rounded-xl bg-[#2962FF] hover:bg-[#1a4fd9] active:bg-[#1040c0] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              Berikutnya <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ── DESKTOP: all pages scrollable ── */
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center gap-4 py-4 bg-[#0D1117]"
+          style={{ scrollBehavior: "smooth" }}
+        >
+          <Document
+            file={url}
+            onLoadSuccess={onDocumentLoadSuccess}
+            loading={
+              <div className="flex flex-col items-center justify-center pt-24 gap-4">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-white/50">Memuat PDF...</p>
+              </div>
+            }
+            error={
+              <div className="mt-24 mx-4 p-6 text-center text-red-400 bg-red-950/30 border border-red-800 rounded-xl">
+                <p className="font-semibold mb-1">Gagal memuat PDF</p>
+                <p className="text-sm text-red-400/70">Format tidak didukung atau link sudah kadaluarsa.</p>
+              </div>
+            }
+          >
+            {numPages > 0 &&
+              Array.from({ length: numPages }, (_, i) => (
+                <div
+                  key={i}
+                  ref={(el) => { pageRefs.current[i] = el; }}
+                  className="w-full flex justify-center"
+                >
+                  <Page
+                    pageNumber={i + 1}
+                    width={pageWidth}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                    className="shadow-2xl rounded-md overflow-hidden bg-white"
+                    loading={
+                      <div
+                        className="bg-[#1E2433] rounded-md animate-pulse"
+                        style={{ width: pageWidth, height: (pageWidth ?? 400) * 1.414 }}
+                      />
+                    }
+                  />
+                </div>
+              ))
+            }
+          </Document>
+          {numPages > 0 && (
+            <p className="text-xs text-white/30 pb-4">— Akhir Dokumen —</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
