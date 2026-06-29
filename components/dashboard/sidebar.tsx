@@ -17,11 +17,13 @@ import {
   Menu,
   X,
   ChevronRight,
+  Library,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/materi", icon: Library, label: "Semua Materi" },
   { href: "/dashboard/ebook", icon: BookOpen, label: "Ebook PDF" },
   { href: "/dashboard/indicator", icon: LineChart, label: "Indicator" },
   { href: "/dashboard/ea", icon: Bot, label: "EA Trading" },
@@ -37,6 +39,7 @@ const sidebarLinks = [
 
 const mobileNavLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
+  { href: "/dashboard/materi", icon: Library, label: "Materi" },
   { href: "/dashboard/downloads", icon: Download, label: "Download" },
   { href: "/dashboard/calculator", icon: Calculator, label: "Calculator" },
   { href: "/dashboard/profile", icon: User, label: "Profile" },
