@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -34,32 +34,47 @@ export default function PdfViewer({ url }: PdfViewerProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Track current page via IntersectionObserver (no-click scroll tracking)
-  useEffect(() => {
-    if (numPages === 0) return;
-    const observers: IntersectionObserver[] = [];
+  // Calculate which page is currently most visible using scroll position
+  const handleScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || pageRefs.current.length === 0) return;
+
+    const containerTop = container.scrollTop;
+    const containerMid = containerTop + container.clientHeight / 2;
+
+    let closestPage = 1;
+    let closestDistance = Infinity;
 
     pageRefs.current.forEach((el, i) => {
       if (!el) return;
-      const io = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            setCurrentPage(i + 1);
-          }
-        },
-        { root: containerRef.current, threshold: 0.5 }
-      );
-      io.observe(el);
-      observers.push(io);
+      const elTop = el.offsetTop;
+      const elMid = elTop + el.offsetHeight / 2;
+      const distance = Math.abs(containerMid - elMid);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestPage = i + 1;
+      }
     });
 
-    return () => observers.forEach(io => io.disconnect());
-  }, [numPages]);
+    setCurrentPage(closestPage);
+  }, []);
+
+  // Attach scroll listener
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [handleScroll, numPages]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
     setCurrentPage(1);
     pageRefs.current = new Array(numPages).fill(null);
+    // Reset scroll to top when document loads
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
   }
 
   const pageWidth = containerWidth > 0 ? containerWidth * scale : undefined;
