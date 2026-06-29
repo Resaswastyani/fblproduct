@@ -216,6 +216,77 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* View All Materials Animated Banner */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mb-8"
+      >
+        <Link href="/dashboard/downloads" className="block relative rounded-3xl overflow-hidden glass-card group border border-[#F7C948]/20 hover:border-[#F7C948]/50 transition-colors">
+          {/* Animated Glow Backgrounds */}
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 8 }}
+            className="absolute -top-24 -right-24 w-64 h-64 bg-[#E91E63]/20 rounded-full blur-[80px] pointer-events-none"
+          />
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 10, delay: 2 }}
+            className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#00BCD4]/20 rounded-full blur-[80px] pointer-events-none"
+          />
+          
+          <div className="relative p-6 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-8 z-10">
+            <div className="flex-1 space-y-4 text-center sm:text-left">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#F7C948]/20 border border-[#F7C948]/30 text-[#F7C948] text-xs font-bold uppercase tracking-wider mb-2">
+                Akses Penuh
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                Koleksi <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7C948] to-[#E91E63]">Semua Materi</span>
+              </h2>
+              <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto sm:mx-0">
+                Jelajahi perpustakaan lengkap yang berisi seluruh Ebook, Indikator, dan Robot Trading (EA) premium Anda dalam satu tempat.
+              </p>
+              <div className="pt-2">
+                <Button className="gradient-gold text-[#0B0F19] font-bold rounded-xl px-8 py-6 text-lg hover:scale-105 transition-transform shadow-[0_0_20px_rgba(247,201,72,0.3)]">
+                  Lihat Semua Materi
+                  <ChevronRight className="w-6 h-6 ml-2" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="relative w-40 h-40 sm:w-56 sm:h-56 flex-shrink-0 flex items-center justify-center mt-6 sm:mt-0">
+              {/* Floating Ebook */}
+              <motion.div
+                animate={{ y: [0, -15, 0], rotate: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                className="absolute top-0 right-4 sm:right-8 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#F7C948]/30 to-[#F7C948]/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-[#F7C948]/40 shadow-xl z-20"
+              >
+                <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-[#F7C948]" />
+              </motion.div>
+              
+              {/* Floating Indicator */}
+              <motion.div
+                animate={{ y: [0, 20, 0], rotate: [0, 10, 0] }}
+                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 1 }}
+                className="absolute bottom-2 left-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#2962FF]/30 to-[#2962FF]/10 rounded-3xl flex items-center justify-center backdrop-blur-xl border border-[#2962FF]/40 shadow-xl z-30"
+              >
+                <LineChart className="w-10 h-10 sm:w-12 sm:h-12 text-[#2962FF]" />
+              </motion.div>
+              
+              {/* Floating EA */}
+              <motion.div
+                animate={{ scale: [1, 1.1, 1], y: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.5 }}
+                className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#00C853]/30 to-[#00C853]/10 rounded-full flex items-center justify-center backdrop-blur-xl border border-[#00C853]/40 shadow-[0_0_30px_rgba(0,200,83,0.3)] z-10"
+              >
+                <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-[#00C853]" />
+              </motion.div>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Access */}
         <motion.div
