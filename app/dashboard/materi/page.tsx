@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   BookOpen,
   LineChart,
@@ -18,6 +19,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+// Dynamically import the PDF Viewer to prevent SSR issues with canvas/window
+const PdfViewer = dynamic(() => import("@/components/pdf-viewer"), { 
+  ssr: false,
+  loading: () => (
+    <div className="flex flex-col items-center justify-center w-full h-full p-12 bg-[#151B28]">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+      <p className="font-medium text-sm text-muted-foreground">Menyiapkan Viewer...</p>
+    </div>
+  )
+});
 
 interface User {
   id: number;
@@ -273,36 +285,9 @@ export default function MateriPage() {
             <div className="flex-1 w-full flex flex-col min-h-0">
               {selectedProduct.file_url ? (
                 selectedProduct.type === 'ebook' ? (
-                  <>
-                    {/* Desktop Ebook Viewer (Iframe) */}
-                    <div className="hidden lg:flex flex-1 w-full bg-[#151B28]">
-                      <iframe
-                        src={`${selectedProduct.file_url}#toolbar=0`}
-                        className="w-full h-full border-0 bg-white"
-                        title={selectedProduct.name}
-                      />
-                    </div>
-                    {/* Mobile Ebook Fallback */}
-                    <div className="lg:hidden flex-1 w-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
-                      <motion.div 
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ repeat: Infinity, duration: 3 }}
-                        className="w-24 h-24 mb-6 rounded-3xl flex items-center justify-center shadow-2xl flex-shrink-0"
-                        style={{ backgroundColor: `${getColor(selectedProduct.type)}20`, color: getColor(selectedProduct.type) }}
-                      >
-                        {getIcon(selectedProduct.type, "w-12 h-12")}
-                      </motion.div>
-                      <h2 className="text-2xl font-bold text-foreground mb-4">{selectedProduct.name}</h2>
-                      <p className="text-muted-foreground max-w-md mb-8">
-                        File Ebook PDF tidak dapat dipreview langsung di browser HP. Silakan buka atau unduh PDF untuk membacanya.
-                      </p>
-                      <Button asChild size="lg" className="gradient-gold text-[#0B0F19] font-bold shadow-[0_0_20px_rgba(247,201,72,0.3)] hover:scale-105 transition-transform">
-                        <a href={selectedProduct.file_url} target="_blank" rel="noreferrer">
-                          <BookOpen className="w-5 h-5 mr-2" /> Buka PDF
-                        </a>
-                      </Button>
-                    </div>
-                  </>
+                  <div className="flex-1 w-full h-full relative z-10">
+                     <PdfViewer url={selectedProduct.file_url} />
+                  </div>
                 ) : (
                   <div className="flex-1 w-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
                     <motion.div 
