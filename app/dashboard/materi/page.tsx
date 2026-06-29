@@ -12,7 +12,9 @@ import {
   Clock,
   Menu,
   X,
-  PlayCircle
+  PlayCircle,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +42,7 @@ export default function MateriPage() {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For mobile sidebar
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true); // For desktop sidebar
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -125,66 +128,94 @@ export default function MateriPage() {
         </Button>
       </div>
 
-      {/* Materials List Sidebar */}
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
-        {(isSidebarOpen || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+        {isSidebarOpen && (
           <motion.div
             initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className={`
-              absolute lg:relative z-30 lg:z-10
-              w-full sm:w-80 lg:w-80 xl:w-96
-              h-[calc(100vh-theme(spacing.16)-4rem)] lg:h-full 
-              bg-[#151B28] border-r border-[#2A3142] flex flex-col shadow-2xl lg:shadow-none
-            `}
+            className="absolute lg:hidden z-30 w-full sm:w-80 h-[calc(100vh-theme(spacing.16)-4rem)] bg-[#151B28] border-r border-[#2A3142] flex flex-col shadow-2xl flex-shrink-0"
+          >
+            <div className="p-4 border-b border-[#2A3142] flex-shrink-0 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Koleksi Materi</h2>
+                <p className="text-sm text-muted-foreground mt-1">{products.length} materi premium tersedia</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {products.map((product) => {
+                const isSelected = selectedProduct?.id === product.id && selectedProduct?.type === product.type;
+                const color = getColor(product.type);
+                return (
+                  <div
+                    key={`mob-${product.type}-${product.id}`}
+                    onClick={() => { setSelectedProduct(product); setIsSidebarOpen(false); }}
+                    className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                      isSelected ? 'bg-[#1E2433] border-[#2A3142] shadow-[inset_4px_0_0_0_#F7C948]' : 'bg-transparent border-transparent hover:bg-[#1E2433]/50 hover:border-[#2A3142]/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}15`, color }}>
+                        {getIcon(product.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`text-sm font-semibold truncate ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>{product.name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5" style={{ color, borderColor: `${color}30` }}>{getTypeName(product.type)}</Badge>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />{product.created_at ? new Date(product.created_at).toLocaleDateString() : 'Tersedia'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
+      <AnimatePresence initial={false}>
+        {isDesktopSidebarOpen && (
+          <motion.div
+            key="desktop-sidebar"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="hidden lg:flex flex-col h-full bg-[#151B28] border-r border-[#2A3142] overflow-hidden flex-shrink-0"
           >
             <div className="p-4 lg:p-6 border-b border-[#2A3142] flex-shrink-0">
               <h2 className="text-xl font-bold text-foreground">Koleksi Materi</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {products.length} materi premium tersedia
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">{products.length} materi premium tersedia</p>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {products.length > 0 ? (
                 products.map((product) => {
                   const isSelected = selectedProduct?.id === product.id && selectedProduct?.type === product.type;
                   const color = getColor(product.type);
-                  
                   return (
                     <div
                       key={`${product.type}-${product.id}`}
-                      onClick={() => {
-                        setSelectedProduct(product);
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      className={`
-                        p-3 rounded-xl cursor-pointer transition-all border
-                        ${isSelected 
-                          ? 'bg-[#1E2433] border-[#2A3142] shadow-[inset_4px_0_0_0_#F7C948]' 
-                          : 'bg-transparent border-transparent hover:bg-[#1E2433]/50 hover:border-[#2A3142]/50'}
-                      `}
+                      onClick={() => setSelectedProduct(product)}
+                      className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                        isSelected ? 'bg-[#1E2433] border-[#2A3142] shadow-[inset_4px_0_0_0_#F7C948]' : 'bg-transparent border-transparent hover:bg-[#1E2433]/50 hover:border-[#2A3142]/50'
+                      }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div 
-                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${color}15`, color: color }}
-                        >
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}15`, color }}>
                           {getIcon(product.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className={`text-sm font-semibold truncate ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
-                            {product.name}
-                          </h4>
+                          <h4 className={`text-sm font-semibold truncate ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>{product.name}</h4>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-[#2A3142] text-muted-foreground" style={{ color: color, borderColor: `${color}30` }}>
-                              {getTypeName(product.type)}
-                            </Badge>
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5" style={{ color, borderColor: `${color}30` }}>{getTypeName(product.type)}</Badge>
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {product.created_at ? new Date(product.created_at).toLocaleDateString() : 'Tersedia'}
+                              <Clock className="w-3 h-3" />{product.created_at ? new Date(product.created_at).toLocaleDateString() : 'Tersedia'}
                             </span>
                           </div>
                         </div>
@@ -193,9 +224,7 @@ export default function MateriPage() {
                   );
                 })
               ) : (
-                <div className="text-center p-8 text-muted-foreground">
-                  Belum ada materi.
-                </div>
+                <div className="text-center p-8 text-muted-foreground">Belum ada materi.</div>
               )}
             </div>
           </motion.div>
@@ -206,20 +235,29 @@ export default function MateriPage() {
       <div className="flex-1 flex flex-col bg-[#0B0F19] relative z-10 h-full">
         {selectedProduct ? (
           <div className="flex flex-col h-full w-full">
-            {/* Viewer Header */}
-            <div className="hidden lg:flex items-center gap-3 p-4 border-b border-[#2A3142] bg-[#151B28]">
-              <div 
-                className="w-8 h-8 rounded-md flex items-center justify-center"
+            {/* Viewer Header - Desktop */}
+            <div className="hidden lg:flex items-center gap-3 p-3 border-b border-[#2A3142] bg-[#151B28]">
+              {/* Sidebar Toggle Button */}
+              <button
+                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                className="p-2 rounded-lg hover:bg-[#2A3142] text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                title={isDesktopSidebarOpen ? "Sembunyikan daftar" : "Tampilkan daftar"}
+              >
+                {isDesktopSidebarOpen
+                  ? <PanelLeftClose className="w-5 h-5" />
+                  : <PanelLeftOpen className="w-5 h-5" />}
+              </button>
+              <div
+                className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: `${getColor(selectedProduct.type)}20`, color: getColor(selectedProduct.type) }}
               >
                 {getIcon(selectedProduct.type, "w-4 h-4")}
               </div>
-              <h1 className="text-lg font-bold text-foreground flex-1 truncate">
+              <h1 className="text-base font-bold text-foreground flex-1 truncate">
                 {selectedProduct.name}
               </h1>
-              
               {selectedProduct.file_url && selectedProduct.type !== 'ebook' && (
-                <Button asChild size="sm" className="gradient-gold text-[#0B0F19] font-bold">
+                <Button asChild size="sm" className="gradient-gold text-[#0B0F19] font-bold flex-shrink-0">
                   <a href={selectedProduct.file_url} target="_blank" rel="noreferrer">
                     <Download className="w-4 h-4 mr-2" /> Download
                   </a>
