@@ -13,8 +13,17 @@ import {
   Clock,
   ChevronRight,
   Zap,
+  ExternalLink,
+  PlayCircle,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface User {
   id: number;
@@ -42,6 +51,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -116,15 +126,14 @@ export default function DashboardPage() {
       item.type === "calculator" || products.some((p) => p.type === item.type),
   );
 
-  const recentActivity = products.slice(0, 4).map((p) => ({
-    name: p.name,
-    type:
+  const recentActivity = products.map((p) => ({
+    ...p,
+    typeName:
       p.type === "ebook"
         ? "Ebook"
         : p.type === "ea"
           ? "EA Trading"
           : "Indicator",
-    time: "Available",
   }));
 
   if (loading) {
@@ -323,62 +332,114 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
+      </div>
 
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className="glass-card rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">
-                Your Products
-              </h2>
-              <Link href="/dashboard/downloads">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  View All
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-[#1E2433]/50 hover:bg-[#1E2433] transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-[#2962FF]/20 flex items-center justify-center flex-shrink-0">
-                      <Download className="w-5 h-5 text-[#2962FF]" />
+      {/* Semua Materi Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mt-8"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Materi Premium Anda
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Klik pada materi untuk membuka dan membacanya secara langsung
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -5 }}
+                onClick={() => setSelectedProduct(activity)}
+                className="glass-card rounded-2xl p-5 hover:border-[#F7C948]/50 transition-all cursor-pointer group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2962FF]/0 to-[#2962FF]/0 group-hover:from-[#2962FF]/10 group-hover:to-[#F7C948]/10 transition-colors" />
+                
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    activity.type === 'ebook' ? 'bg-[#F7C948]/20 text-[#F7C948]' :
+                    activity.type === 'ea' ? 'bg-[#00C853]/20 text-[#00C853]' :
+                    'bg-[#2962FF]/20 text-[#2962FF]'
+                  }`}>
+                    {activity.type === 'ebook' ? <BookOpen className="w-6 h-6" /> :
+                     activity.type === 'ea' ? <Bot className="w-6 h-6" /> :
+                     <LineChart className="w-6 h-6" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-bold text-foreground line-clamp-2 group-hover:text-[#F7C948] transition-colors">
+                      {activity.name}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground truncate">
-                        {activity.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {activity.type}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                      <Clock className="w-3 h-3" />
-                      {activity.time}
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {activity.typeName}
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No products assigned yet.
-                </p>
-              )}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-[#2A3142] flex items-center justify-between relative z-10">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : 'Tersedia'}
+                  </span>
+                  <div className="flex items-center gap-1 text-[#F7C948] text-sm font-medium">
+                    <PlayCircle className="w-4 h-4" /> Buka
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full glass-card rounded-2xl p-8 text-center text-muted-foreground">
+              Belum ada materi yang tersedia untuk Anda.
             </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Viewer Modal */}
+      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
+        <DialogContent className="bg-[#0B0F19] border-[#2A3142] text-foreground max-w-5xl w-full h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b border-[#2A3142] flex-shrink-0 bg-[#151B28]">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              {selectedProduct?.type === 'ebook' ? <BookOpen className="w-5 h-5 text-[#F7C948]" /> :
+               selectedProduct?.type === 'ea' ? <Bot className="w-5 h-5 text-[#00C853]" /> :
+               <LineChart className="w-5 h-5 text-[#2962FF]" />}
+              {selectedProduct?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-black/50 relative">
+            {selectedProduct?.file_url ? (
+              <iframe 
+                src={selectedProduct.file_url} 
+                className="w-full h-full border-0"
+                title={selectedProduct.name}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
+                <FileText className="w-16 h-16 mb-4 opacity-50" />
+                <h3 className="text-xl font-bold text-foreground mb-2">File Tidak Tersedia</h3>
+                <p>Maaf, file materi ini belum diunggah atau link tidak valid.</p>
+              </div>
+            )}
+            
+            {/* Download/External Link Button overlay for non-pdf formats if needed */}
+            {selectedProduct?.file_url && selectedProduct.type !== 'ebook' && (
+              <div className="absolute bottom-6 right-6">
+                 <Button asChild className="gradient-gold text-[#0B0F19] font-bold shadow-xl">
+                   <a href={selectedProduct.file_url} target="_blank" rel="noreferrer">
+                     <Download className="w-4 h-4 mr-2" /> Download File
+                   </a>
+                 </Button>
+              </div>
+            )}
           </div>
-        </motion.div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
