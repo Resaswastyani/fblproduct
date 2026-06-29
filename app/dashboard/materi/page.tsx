@@ -103,14 +103,14 @@ export default function MateriPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="h-[calc(100vh-9rem)] lg:h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#2962FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#0B0F19] relative">
+    <div className="h-[calc(100vh-9rem)] lg:h-screen flex flex-col lg:flex-row overflow-hidden bg-[#0B0F19] relative">
       
       {/* Mobile Header / Toggle Sidebar */}
       <div className="lg:hidden p-4 border-b border-[#2A3142] flex items-center justify-between bg-[#151B28] z-20">
