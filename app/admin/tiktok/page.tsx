@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Video,
   Plus,
@@ -16,24 +16,24 @@ import {
   Share2,
   TrendingUp,
   Play,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const tiktokVideos = [
   {
@@ -108,26 +108,26 @@ const tiktokVideos = [
     status: "published",
     postedAt: "2024-01-08",
   },
-]
+];
 
 const formatNumber = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M"
-  if (num >= 1000) return (num / 1000).toFixed(1) + "K"
-  return num.toString()
-}
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+  return num.toString();
+};
 
 export default function AdminTikTokPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredVideos = tiktokVideos.filter((video) =>
-    video.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    video.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
-  const totalViews = tiktokVideos.reduce((acc, v) => acc + v.views, 0)
-  const totalLikes = tiktokVideos.reduce((acc, v) => acc + v.likes, 0)
-  const totalComments = tiktokVideos.reduce((acc, v) => acc + v.comments, 0)
-  const totalShares = tiktokVideos.reduce((acc, v) => acc + v.shares, 0)
+  const totalViews = tiktokVideos.reduce((acc, v) => acc + v.views, 0);
+  const totalLikes = tiktokVideos.reduce((acc, v) => acc + v.likes, 0);
+  const totalComments = tiktokVideos.reduce((acc, v) => acc + v.comments, 0);
+  const totalShares = tiktokVideos.reduce((acc, v) => acc + v.shares, 0);
 
   return (
     <div className="space-y-6">
@@ -135,7 +135,9 @@ export default function AdminTikTokPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">TikTok Traffic</h1>
-          <p className="text-muted-foreground">Manage your TikTok content and analytics</p>
+          <p className="text-muted-foreground">
+            Manage your TikTok content and analytics
+          </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -199,7 +201,9 @@ export default function AdminTikTokPage() {
             <Eye className="w-5 h-5 text-[#2962FF]" />
             <span className="text-sm text-muted-foreground">Total Views</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{formatNumber(totalViews)}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {formatNumber(totalViews)}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -211,7 +215,9 @@ export default function AdminTikTokPage() {
             <Heart className="w-5 h-5 text-[#EF4444]" />
             <span className="text-sm text-muted-foreground">Total Likes</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{formatNumber(totalLikes)}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {formatNumber(totalLikes)}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -223,7 +229,9 @@ export default function AdminTikTokPage() {
             <MessageCircle className="w-5 h-5 text-[#10B981]" />
             <span className="text-sm text-muted-foreground">Comments</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{formatNumber(totalComments)}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {formatNumber(totalComments)}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -235,7 +243,9 @@ export default function AdminTikTokPage() {
             <Share2 className="w-5 h-5 text-[#F7C948]" />
             <span className="text-sm text-muted-foreground">Shares</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{formatNumber(totalShares)}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {formatNumber(totalShares)}
+          </p>
         </motion.div>
       </div>
 
@@ -280,7 +290,9 @@ export default function AdminTikTokPage() {
               </div>
               <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 rounded px-2 py-1">
                 <Eye className="w-3 h-3 text-white" />
-                <span className="text-xs text-white">{formatNumber(video.views)}</span>
+                <span className="text-xs text-white">
+                  {formatNumber(video.views)}
+                </span>
               </div>
             </div>
 
@@ -292,11 +304,18 @@ export default function AdminTikTokPage() {
                 </h3>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                    >
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-[#1E2433] border-[#2A3142]">
+                  <DropdownMenuContent
+                    align="end"
+                    className="bg-[#1E2433] border-[#2A3142]"
+                  >
                     <DropdownMenuItem className="cursor-pointer">
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Open in TikTok
@@ -339,7 +358,9 @@ export default function AdminTikTokPage() {
       <div className="bg-[#0D1117] border border-[#2A3142] rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-5 h-5 text-[#10B981]" />
-          <h3 className="font-semibold text-foreground">Top Performing Video</h3>
+          <h3 className="font-semibold text-foreground">
+            Top Performing Video
+          </h3>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="w-full sm:w-32 h-24 bg-gradient-to-br from-[#1E2433] to-[#0D1117] rounded-lg flex items-center justify-center">
@@ -350,13 +371,28 @@ export default function AdminTikTokPage() {
               {tiktokVideos.sort((a, b) => b.views - a.views)[0].title}
             </h4>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span>{formatNumber(tiktokVideos.sort((a, b) => b.views - a.views)[0].views)} views</span>
-              <span>{formatNumber(tiktokVideos.sort((a, b) => b.views - a.views)[0].likes)} likes</span>
-              <span>{formatNumber(tiktokVideos.sort((a, b) => b.views - a.views)[0].shares)} shares</span>
+              <span>
+                {formatNumber(
+                  tiktokVideos.sort((a, b) => b.views - a.views)[0].views,
+                )}{" "}
+                views
+              </span>
+              <span>
+                {formatNumber(
+                  tiktokVideos.sort((a, b) => b.views - a.views)[0].likes,
+                )}{" "}
+                likes
+              </span>
+              <span>
+                {formatNumber(
+                  tiktokVideos.sort((a, b) => b.views - a.views)[0].shares,
+                )}{" "}
+                shares
+              </span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -5,16 +5,16 @@ import { hashPassword } from "@/lib/auth";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email } = body;
 
-    if (!name || !email || !password) {
+    if (!name || !email) {
       return NextResponse.json(
         { error: "All fields required" },
         { status: 400 },
       );
     }
 
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = hashPassword("");
 
     const result = await sql`
       INSERT INTO users (name, email, password, role, status)
