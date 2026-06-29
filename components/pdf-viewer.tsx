@@ -124,8 +124,10 @@ export default function PdfViewer({ url }: PdfViewerProps) {
       {/* ── MOBILE: single page + prev/next buttons ── */}
       {isMobile ? (
         <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Single page viewer */}
-          <div className="flex-1 overflow-y-auto flex justify-center items-start py-4 bg-[#0D1117]"
+          {/* Single page viewer — ref attached here to measure width */}
+          <div
+            ref={containerRef}
+            className="flex-1 overflow-y-auto flex justify-center items-start py-4 bg-[#0D1117]"
             style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
           >
             <Document
