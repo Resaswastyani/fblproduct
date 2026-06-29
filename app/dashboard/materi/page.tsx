@@ -103,14 +103,14 @@ export default function MateriPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-9rem)] lg:h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#2962FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-9rem)] lg:h-screen flex flex-col lg:flex-row overflow-hidden bg-[#0B0F19]">
+    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#0B0F19] relative">
       
       {/* Mobile Header / Toggle Sidebar */}
       <div className="lg:hidden p-4 border-b border-[#2A3142] flex items-center justify-between bg-[#151B28] z-20">
@@ -136,7 +136,7 @@ export default function MateriPage() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="absolute lg:hidden z-30 w-full sm:w-80 h-[calc(100vh-9rem-4rem)] bg-[#151B28] border-r border-[#2A3142] flex flex-col shadow-2xl flex-shrink-0"
+            className="absolute inset-x-0 top-0 bottom-0 lg:hidden z-30 w-full sm:w-80 bg-[#151B28] border-r border-[#2A3142] flex flex-col shadow-2xl flex-shrink-0"
           >
             <div className="p-4 border-b border-[#2A3142] flex-shrink-0 flex items-center justify-between">
               <div>
