@@ -232,9 +232,9 @@ export default function MateriPage() {
       </AnimatePresence>
 
       {/* Main Viewer Area */}
-      <div className="flex-1 flex flex-col bg-[#0B0F19] relative z-10 h-full">
+      <div className="flex-1 flex flex-col bg-[#0B0F19] relative z-10">
         {selectedProduct ? (
-          <div className="flex flex-col h-full w-full">
+          <div className="flex-1 flex flex-col w-full min-h-0">
             {/* Viewer Header - Desktop */}
             <div className="hidden lg:flex items-center gap-3 p-3 border-b border-[#2A3142] bg-[#151B28]">
               {/* Sidebar Toggle Button */}
@@ -270,12 +270,12 @@ export default function MateriPage() {
             </div>
 
             {/* Viewer Content */}
-            <div className="flex-1 relative w-full h-full min-h-0">
+            <div className="flex-1 w-full flex flex-col min-h-0">
               {selectedProduct.file_url ? (
                 selectedProduct.type === 'ebook' ? (
                   <>
                     {/* Desktop Ebook Viewer (Iframe) */}
-                    <div className="hidden lg:block absolute inset-0 w-full h-full bg-[#151B28]">
+                    <div className="hidden lg:flex flex-1 w-full bg-[#151B28]">
                       <iframe
                         src={`${selectedProduct.file_url}#toolbar=0`}
                         className="w-full h-full border-0 bg-white"
@@ -283,7 +283,7 @@ export default function MateriPage() {
                       />
                     </div>
                     {/* Mobile Ebook Fallback */}
-                    <div className="lg:hidden absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
+                    <div className="lg:hidden flex-1 w-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
                       <motion.div 
                         animate={{ y: [0, -10, 0] }}
                         transition={{ repeat: Infinity, duration: 3 }}
@@ -304,7 +304,7 @@ export default function MateriPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
+                  <div className="flex-1 w-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#151B28] to-[#0B0F19] overflow-y-auto">
                     <motion.div 
                       animate={{ y: [0, -10, 0] }}
                       transition={{ repeat: Infinity, duration: 3 }}
